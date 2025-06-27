@@ -1,0 +1,3 @@
+C:/Users/aseel/CLionProjects/HW5---02360360/cmake-build-debug/CMakeFiles/HW5___02360360.dir
+C:/Users/aseel/CLionProjects/HW5---02360360/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/aseel/CLionProjects/HW5---02360360/cmake-build-debug/CMakeFiles/rebuild_cache.dir
