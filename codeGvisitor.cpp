@@ -2,6 +2,8 @@
 #include "output.hpp"
 #include <memory>
 #include <cassert>
+using namespace std;
+
 using namespace ast;
 
 codeGvisitor::codeGvisitor(output::CodeBuffer* cb): cb(cb)
@@ -47,8 +49,70 @@ define void @print(i8*) {
     void codeGvisitor::visit(Continue& node) {}
     void codeGvisitor::visit(Call& node) {}
     void codeGvisitor::visit(ExpList& node) {}
-    void codeGvisitor::visit(ast::ArrayAssign &node) {}//today
-    void codeGvisitor::visit(ast::Funcs& node) {for (std::size_t i = 0; i < node.funcs.size(); ++i) {
+    void codeGvisitor::visit(ast::ArrayAssign &node) {
+node.id->accept(*this);
+    node.index->accept(*this);
+    node.exp->accept(*this);// accepting everything 
+
+ std::string indexVar = node.index->newVar;
+  if (node.index->type == ast::BuiltInType::BYTE) {
+        std::string z = cb->freshVar();
+        cb->emit(z + " = zext i8 " + indexVar + " to i32");
+        indexVar = z;
+    }
+    std::string expVar = node.exp->newVar;
+     int baseoff = node.id->offset;
+     std::string newbasePtrI32 = cb->freshVar();
+        cb->emit(newbasePtrI32 +
+        " = getelementptr i32, i32* %local_vars, i32 " +
+        std::to_string(baseoff));
+   
+    auto arrType = node.id->type;
+   
+
+    std::string elemLLVM = output::changeType(arrType);
+
+    std::string basePtr = cb->freshVar();
+    cb->emit(basePtr +
+        " = bitcast i32* " + newbasePtrI32 + " to " + elemLLVM + "*");
+
+   
+    std::string elemPtr = cb->freshVar();
+    cb->emit(elemPtr +
+        " = getelementptr " + elemLLVM + ", " + elemLLVM + "* " +
+        basePtr + ", i32 " + indexVar);
+
+  
+    if (node.exp->type == ast::BuiltInType::BYTE &&
+        arrType == ast::BuiltInType::INT) {
+        std::string rhsExt = cb->freshVar();
+        cb->emit(rhsExt + " = zext i8 " + expVar + " to i32");
+        expVar = rhsExt;
+    } else if (node.exp->type == ast::BuiltInType::INT &&
+               arrType == ast::BuiltInType::BYTE) {
+        std::string rhsTrunc = cb->freshVar();
+        cb->emit(rhsTrunc + " = trunc i32 " + expVar + " to i8");
+        expVar = rhsTrunc;
+    }
+
+   
+    cb->emit("store " + elemLLVM + " " + expVar + ", " +
+                    elemLLVM + "* " + elemPtr + ", align 4");
+
+
+
+//     idx  = code for index-expression            ; possibly zext to i32
+// rhs  = code for right-hand side expression  ; widen/trunc if needed
+
+// base = getelementptr i32, i32* %local_vars, i32 <arrayOffset>
+// elemPtr = bitcast i32* base to <elemTy>*      ; if you keep %local_vars
+// elemPtr = getelementptr <elemTy>, <elemTy>* elemPtr, i32 idx   ; ← ①
+// store <elemTy> rhs, <elemTy>* elemPtr, align 4                 ; ← ②
+
+
+    }//today
+    void codeGvisitor::visit(ast::Funcs& node)
+     {for (std::size_t i = 0; i < node.funcs.size(); ++i) {
     node.funcs[i]->accept(*this);
 }}
     void codeGvisitor::visit(ast::PrimitiveType &node){}//done
