@@ -190,7 +190,7 @@ std::string beginL;
         std::shared_ptr<Exp> left;
         // Right operand
         std::shared_ptr<Exp> right;
-
+        std::string finishL;
         // Constructor that receives the left and right operands
         And(std::shared_ptr<Exp> left, std::shared_ptr<Exp> right);
 
@@ -206,7 +206,7 @@ std::string beginL;
         std::shared_ptr<Exp> left;
         // Right operand
         std::shared_ptr<Exp> right;
-
+        std::string finishL;
         // Constructor that receives the left and right operands
         Or(std::shared_ptr<Exp> left, std::shared_ptr<Exp> right);
 

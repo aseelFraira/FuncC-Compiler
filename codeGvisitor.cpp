@@ -73,8 +73,8 @@ node.id->accept(*this);
     node.index->accept(*this);
     node.exp->accept(*this);// accepting everything 
      std::string indexVar = node.index->newVar;
-// auto arrTy =(node.id->type);
-// emitOobCheck(indexVar, arrTy->length);
+auto len =(node.id->len);
+ emitOobCheck(indexVar, len);
 
 
 
@@ -224,10 +224,176 @@ std::string rightNewVar=node.right->newVar;
     
     node.newVar = mancjild;
     }
-    void codeGvisitor::visit(And& node) {}
-    void codeGvisitor::visit(Or& node) {}
-    void codeGvisitor::visit(ArrayDereference& node) {
+    void codeGvisitor::visit(And& node) {
+    std::string e5tesarL = cb->freshLabel();
+    std::string rightSideLabel = cb->freshLabel();
+   
+ 
+    std::string finishVar = cb->freshVar();
+       std::string finishL = cb->freshLabel();
+    node.finishL = finishL;
+   
+    node.left->accept(*this);
+      node.right->accept(*this);
+    std::string LeftSideLabel = node.left->newVar;
+  //we dont need to emit the leftside label because its in newVar leftside 
 
+   
+    cb->emit("br i1 " + LeftSideLabel + ", label " + rightSideLabel + ", label " + e5tesarL);
+
+    
+ 
+   
+  
+  cb->emitLabel(rightSideLabel);
+    // mnf7s shu hene el next label 7sb shu el jump ele b3du w mn3mlha mhu 7sb kman shu nu3 el next label ta3na 
+    if (auto n = dynamic_cast<ast::Or*>(node.right.get())) {
+        rightSideLabel = n->finishL;
+    } 
+    else if (auto n = dynamic_cast<ast::Not*>(node.right.get())) {
+      rightSideLabel = n->beginL;}
+    else if (auto n = dynamic_cast<ast::RelOp*>(node.right.get())) {
+        rightSideLabel = n->beginL;
+    } 
+    else if (auto n = dynamic_cast<ast::And*>(node.right.get())) {
+        rightSideLabel = n->finishL;
+    } 
+   
+    
+    
+    
+    //i dont think we need this 
+    // else if (auto funcNode = dynamic_cast<ast::Call*>(node.right.get())) {
+    //     rightSideLabel = funcNode->beginL;
+    // }
+
+    std::string secondnewVar = node.right->newVar;
+    cb->emit("br label " + finishL);
+
+
+    //e5tesar
+    cb->emitLabel(e5tesarL); 
+    cb->emit("br label " + finishL);
+   
+    
+    // phi and join
+    cb->emitLabel(finishL);
+    cb->emit(finishVar + " = phi i1 [ false, " + e5tesarL + " ], [ " + secondnewVar + ", " + rightSideLabel + " ]");
+    
+  
+    node.newVar = finishVar;
+  cb->emit("");
+  
+  
+  
+  
+  
+  
+  
+  
+  /**
+    std::string rightSideLabel= cb->freshLabel();
+    std::string fLab = cb->freshLabel();
+    std::string finishL= cb->freshLabel();
+    std::string finishedVar= cb->freshVar();
+
+
+    node.left->accept(*this);
+  
+    cb->emit("br i1 " + node.left->newVar +
+                    ", label " + rightSideLabel +
+                    ", label " + fLab);//
+
+
+    //this needs an icmp before it that the is_even is true or false
+// br i1 %is_even, label %even_label, label %odd_label
+    node.right->accept(*this);
+   cb->emitLabel(rightSideLabel);
+   
+  
+    if (auto n = dynamic_cast<ast::Or*>(node.right.get()))
+       { rightSideLabel = n->finishL;}
+    else if (auto n = dynamic_cast<ast::And*>(node.right.get()))
+      {  rightSideLabel = n->finishL;}
+    else if (auto rel = dynamic_cast<ast::RelOp*>(node.right.get()))
+       { rightSideLabel = rel->beginL;}
+    else if (auto n = dynamic_cast<ast::Not*>(node.right.get()))
+       { rightSideLabel = n->beginL;}
+    else if (auto c = dynamic_cast<ast::Call*>(node.right.get()))
+       { rightSideLabel = c->beginL;}
+
+    cb->emit("br label " + finishL);        
+
+   // false short-circuit
+    cb->emitLabel(fLab);
+    cb->emit("br label " + finishL);
+
+    // join 
+    cb->emitLabel(finishL);
+    cb->emit(finishedVar +
+        " = phi i1 [ 0, " + fLab + " ], [ " +
+                    node.right->newVar + ", " + rightSideLabel + " ]");
+
+    node.newVar = finishedVar;**/
+    }
+    void codeGvisitor::visit(Or& node) {
+        //same thing as and but we alter the short circut evaluation 
+    std::string rightSideLabel = cb->freshLabel();
+    std::string e5tesarL = cb->freshLabel();
+ 
+  
+       std::string finishL = cb->freshLabel();
+    node.finishL = finishL;
+    // Generate code for first operand
+    node.left->accept(*this);
+     node.right->accept(*this);
+    std::string leftsideNewVar = node.left->newVar;
+  
+
+    cb->emit("br i1 " + leftsideNewVar + ", label " + e5tesarL + ", label " + rightSideLabel);
+
+    
+ 
+   
+  
+    
+   if (auto n = dynamic_cast<ast::Or*>(node.right.get())) {
+        rightSideLabel = n->finishL;
+    } 
+    else if (auto n = dynamic_cast<ast::Not*>(node.right.get())) {
+      rightSideLabel = n->beginL;}
+    else if (auto n = dynamic_cast<ast::RelOp*>(node.right.get())) {
+        rightSideLabel = n->beginL;
+    } 
+    else if (auto n = dynamic_cast<ast::And*>(node.right.get())) {
+        rightSideLabel = n->finishL;
+    } 
+     cb->emitLabel(rightSideLabel);
+    //I dont know if we need this 
+    // } else if (auto funcNode = dynamic_cast<ast::Call*>(node.right.get())) {
+    //     rightSideLabel = funcNode->beginL;
+    // }
+
+   
+    cb->emit("br label " + finishL);
+
+
+
+    cb->emitLabel(e5tesarL);
+    cb->emit("br label " + finishL);
+ 
+    std::string finishnewVar = cb->freshVar();
+    std::string seconnewVar = node.right->newVar;
+    cb->emitLabel(finishL);
+    cb->emit(finishnewVar + " = phi i1 [ true, " + e5tesarL + " ], [ " + seconnewVar + ", " + rightSideLabel + " ]");
+    
+   
+    node.newVar = finishnewVar;
+    cb->emit("");
+
+
+    }
+    void codeGvisitor::visit(ArrayDereference& node) {
     node.id->accept(*this);
   auto type=node.id->type;
   auto changedType=output::changeType(type);
@@ -238,7 +404,8 @@ std::string rightNewVar=node.right->newVar;
     cb->emit(z + " = zext i8 " + indexVar + " to i32");         
     indexVar = z;                                               
 }
-
+auto len =(node.id->len);
+ emitOobCheck(indexVar, len);
     int offset=node.id->offset;
 std::string getElement=cb->freshVar();
 cb->emit( getElement+" = getelementptr i32, i32* %local_vars, i32 " +
@@ -300,7 +467,7 @@ node.newVar=label;
        // throw std::runtime_error("Invalid cast from " + output::changeType(whatWeHave) + " to " + output::changeType(whatWeWant));
     }
 
-    // Store the result in the node's llvmVar
+   
     node.newVar = toCas;
     }//today
    //codeGvisitor::visit(ast::PrimitiveType& node) {}
@@ -320,7 +487,7 @@ node.newVar=label;
  *----------------------------------------------------------------*/
 
 
-//TO DO : RE DO THE LENGTH IN THE ARRAY SO THE EMIT OOB FUNCTION COULD FUNCTION NORMALLY 
+ 
 std::string codeGvisitor::emitOobCheck(const std::string& idxVar,
                                          int length)
 {
