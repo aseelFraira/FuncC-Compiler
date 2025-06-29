@@ -83,3 +83,6 @@ int SymbolTable::getOffset(const std::string& name) const {
     }
     throw std::runtime_error("Variable not found: " + name);
 }
+int SymbolTable::getCurrentOffset() const{
+    return currentOffset;
+}

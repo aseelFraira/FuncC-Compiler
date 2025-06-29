@@ -112,7 +112,7 @@ void SemanticVisitor::visit(VarDecl& node) {
 
     // Emit variable or array declaration
     int offset = symbols.getOffset(varName);
-    node.id->offset = symbols.getOffset(varName);
+    node.id->offset = offset + currParamsNum; //this is needed for the alloca list
     if (isArray) {
         printer->emitArr(varName, declaredType, node.len, offset);
     } else {
@@ -133,6 +133,7 @@ void SemanticVisitor::visit(FuncDecl& node) {
     currentReturnType = retTypeNode->type;
 
     symbols.beginFunction();
+    currParamsNum = node.formals->formals.size();
     printer->beginScope();
 
     for (const auto& formal : node.formals->formals) {
@@ -146,14 +147,15 @@ void SemanticVisitor::visit(FuncDecl& node) {
         if (!success) {
             output::errorDef(formal->line, varName);
         } else {
-            node.id->offset=symbols.getOffset(varName);
+            node.id->offset = symbols.getOffset(varName) - currParamsNum;
             printer->emitVar(varName, typeNode->type, symbols.getOffset(varName));
         }
     }
     funcBegin = true;
     node.body->accept(*this);
     printer->endScope();
-
+    node.offset = symbols.getCurrentOffset() + node.formals->formals.size();
+    currParamsNum = 0;
     symbols.endFunction();
 
 }
@@ -644,6 +646,10 @@ void SemanticVisitor::visit(ast::Funcs &node) {
         !mainInfo->paramTypes.empty()) {
         output::errorMainMissing();
     }
+}
+
+SymbolTable *SemanticVisitor::getTable() {
+    return &symbols;
 }
 
 

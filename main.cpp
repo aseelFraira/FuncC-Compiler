@@ -28,7 +28,7 @@ int main() {
        // std::cout << printer;
 
 output::CodeBuffer code;
-codeGvisitor gvisitor(&code);
+codeGvisitor gvisitor(&code,semVisitor.getTable());
 program->accept(gvisitor);
 std::cout << code;
 

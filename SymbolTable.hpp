@@ -36,10 +36,12 @@ public:
     FunctionInfo* lookupFunc(const std::string& name);
 
     int getOffset(const std::string& name) const;
+    int getCurrentOffset() const;
 
 
 
-private:
+
+        private:
     //HW3___02360360_SYMBOLTABLE_HPP
 /* We use a vector as a stack to manage nested scopes.
  * Each element in the vector represents one scope (a symbol table for that level).

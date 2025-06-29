@@ -48,15 +48,16 @@ public:
     void visit(Cast& node) override;
     bool isAssignableTo(BuiltInType from, BuiltInType to);
     bool isNumericType(BuiltInType type);
+    SymbolTable* getTable();
 
 
         private:
-    output::ScopePrinter* printer;
-    SymbolTable symbols;
-
-    ast::BuiltInType currentReturnType;
-    int loopDepth = 0;  // for break/continue
-    bool funcBegin = false;
+            output::ScopePrinter* printer;
+            SymbolTable symbols;
+            ast::BuiltInType currentReturnType;
+            int loopDepth = 0;  // for break/continue
+            int currParamsNum = 0;
+            bool funcBegin = false;
 };
 
 

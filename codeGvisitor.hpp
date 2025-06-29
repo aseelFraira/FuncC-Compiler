@@ -2,13 +2,15 @@
 #define CODEGVISITOR_HPP
 #pragma once
 
-#include "output.hpp"         
+#include "output.hpp"
+#include "SymbolTable.hpp"
+
 using namespace ast;
 
 class codeGvisitor : public Visitor {
 public:
-    codeGvisitor(output::CodeBuffer* cb);
-std::string emitOobCheck(const std::string& idxVar,
+    codeGvisitor(output::CodeBuffer* cb,SymbolTable* table);
+    std::string emitOobCheck(const std::string& idxVar,
                                          int length);
     void visit(ast::ArrayType &node) override;
     void visit(FuncDecl& node) override;
@@ -46,8 +48,10 @@ std::string emitOobCheck(const std::string& idxVar,
 
 
 
-        private:
-   output::CodeBuffer *cb;
+private:
+        output::CodeBuffer *cb;
+        SymbolTable* symbol_table;
+        BuiltInType currentReturnTypeFunc;
 };
 
 

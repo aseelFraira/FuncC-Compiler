@@ -38,11 +38,140 @@ define void @print(i8*) {
 }
     )");
 }
+///////////////////////////////////ArrayType////////////////////////////////////
+void codeGvisitor::visit(ast::ArrayType& node) {
+    node.length->accept(*this);
+    std::string elementTypeLLVM = output::changeType(node.type);
+    std::string arrayTypeLLVM = "[" + std::to_string(node.len) + " x " +
+            elementTypeLLVM + "]";
+    node.newVar = arrayTypeLLVM;
+}
+//////////////////////////////////FuncDecl//////////////////////////////////////
+void codeGvisitor::visit(FuncDecl& node) {
+    // Resolve and validate return type
+    node.return_type->accept(*this);
+    auto returnTypeNode = std::dynamic_pointer_cast<PrimitiveType>(node.return_type);
+    if (!returnTypeNode) {
+        output::errorMismatch(node.line);
+    }
+    currentReturnTypeFunc = returnTypeNode->type;
 
-    void codeGvisitor::visit(ast::ArrayType &node){}
-    void codeGvisitor::visit(FuncDecl& node){}
-    void codeGvisitor::visit(VarDecl& node) {}
-    void codeGvisitor::visit(Return& node) {}
+    std::string llvmReturnType = output::changeType(returnTypeNode->type);
+
+    // Emit function signature
+    std::string funcName = node.id->value;
+    cb->emit("define " + llvmReturnType + " @" + funcName + "(");
+
+    // Visit and emit parameter declarations
+    node.formals->accept(*this);
+    cb->emit(") {");
+    cb->emit(""); // spacing for readability
+
+    // Emit function entry label
+    cb->emitLabel("entry");
+
+    // Allocate unified local variable space using precomputed offset
+    if (node.offset > 0) {
+        cb->emit("%local_vars = alloca i32, i32 " + std::to_string(symbol_table->getCurrentOffset()));
+    }
+
+    // Emit code for the function body
+    node.body->accept(*this);
+
+    // we need to check if it has a return statment
+    // Check if the last statement is NOT a return
+    if (node.body->statements.empty() ||
+        !std::dynamic_pointer_cast<Return>(node.body->statements.back())) {
+
+        ast::BuiltInType returnType = returnTypeNode->type;
+        std::string llvmType = output::changeType(returnType);
+
+        if (returnType == ast::BuiltInType::VOID) {
+            cb->emit("ret void");
+        } else {
+            std::string defaultValue = (returnType == ast::BuiltInType::BOOL) ? "false" : "0";
+            cb->emit("ret " + llvmType + " " + defaultValue);
+        }
+    }
+
+    cb->emit("}");
+    cb->emit("");
+
+}
+///////////////////////////////VarDecl//////////////////////////////////////////
+void codeGvisitor::visit(VarDecl& node) {
+    std::string llvmType = output::changeType(node.id->type);
+
+    std::string ptrVar = cb->freshVar();
+    cb->emit(ptrVar + " = getelementptr i32, i32* %local_vars, i32 " +
+    std::to_string(node.id->offset));
+
+    // Handle initialization
+    if (node.init_exp) {
+        // Visit the initializer expression and get the result value
+        node.init_exp->accept(*this);
+        std::string initValueVar = node.init_exp->newVar;
+        cb->emit("store " + llvmType + " " + initValueVar + ", " + llvmType + "* " + ptrVar);
+    } else {
+        // No initializer — emit default value based on type
+        if (node.id->type == BuiltInType::INT || node.id->type == BuiltInType::BYTE) {
+            cb->emit("store " + llvmType + " 0, " + llvmType + "* " + ptrVar);
+        } else if (node.id->type == BuiltInType::BOOL) {
+            cb->emit("store " + llvmType + " false, " + llvmType + "* " + ptrVar);
+        }
+    }
+}
+///////////////////////////////Return///////////////////////////////////////////
+void codeGvisitor::visit(Return& node) {
+    if (currentReturnTypeFunc == BuiltInType::VOID) {
+        cb->emit("ret void");
+    } else {
+        if(node.exp) {
+            node.exp->accept(*this);
+            std::string resultVar = node.exp->newVar;
+            std::string llvmType = output::changeType(
+                    currentReturnTypeFunc);
+            cb->emit("ret " + llvmType + " " + resultVar);
+        }
+    }
+}
+///////////////////////////////While////////////////////////////////////////////
+void codeGvisitor::visit(While& node) {
+    // Create labels for control flow
+    std::string condLabel = cb->freshLabel();     // start of condition check
+    std::string bodyLabel = cb->freshLabel();     // loop body
+    std::string endLabel = cb->freshLabel();      // after the loop
+
+    // Unconditional branch to condition check
+    cb->emit("br label " + condLabel);
+    cb->emit("");
+    cb->emitLabel(condLabel);
+
+    // Generate code for the loop condition
+    node.condition->accept(*this);
+    std::string condVar = node.condition->newVar;
+
+    // br i1 %cond, label %body_label, label %end_label
+    cb->emit("br i1 " + condVar + ", label " + bodyLabel + ", label " + endLabel);
+    cb->emit("");
+
+    // Emit body block
+    cb->emitLabel(bodyLabel);
+    node.body->accept(*this); // emit body code
+
+    // After body, jump back to condition check
+    cb->emit("br label " + condLabel);
+    cb->emit("");
+
+    // Emit loop exit label
+    cb->emitLabel(endLabel);
+}
+
+
+void codeGvisitor::visit(Break& node) {}//TODAY
+void codeGvisitor::visit(Continue& node) {}//TODAY
+void codeGvisitor::visit(Call& node) {}
+
     void codeGvisitor::visit(Assign& node)
      { 
     node.exp->accept(*this);
@@ -86,10 +215,7 @@ define void @print(i8*) {
         cb->emitLabel(endLabel);
 cb->emit("");
     }//TODAY
-    void codeGvisitor::visit(While& node) {}//TODAY
-    void codeGvisitor::visit(Break& node) {}//TODAY
-    void codeGvisitor::visit(Continue& node) {}//TODAY
-    void codeGvisitor::visit(Call& node) {}
+
     void codeGvisitor::visit(ExpList& node) {}//done
     void codeGvisitor::visit(ast::ArrayAssign &node) {
 node.id->accept(*this);
@@ -184,20 +310,25 @@ codeGvisitor::widenByte(indexVar, node.index->type);
         node.statements[i]->accept(*this);
     }
 }//maybe not complete- maybe we need to check last statement if empty}
- 
     void codeGvisitor::visit(Num& node) {
             node.newVar=std::to_string(node.value);
     }
     void codeGvisitor::visit(NumB& node)
      {node.newVar=std::to_string(node.value);}
     void codeGvisitor::visit(String& node)
-     {  node.newVar=(node.value);}
-    void codeGvisitor::visit(Bool& node) 
+     {
+        node.newVar=(node.value);
+     }
+     void codeGvisitor::visit(Bool& node)
     {
-         if(node.value==true)
-    {node.newVar="true";}
-    else{node.newVar="false";}}
-    void codeGvisitor::visit(ID& node) 
+         if(node.value==true){
+             node.newVar="true";
+         }
+    else{
+        node.newVar="false";
+    }
+    }
+    void codeGvisitor::visit(ID& node)
     {//today
     if (node.offset < 0) {
         node.newVar = "%" + node.value;
@@ -223,13 +354,13 @@ codeGvisitor::widenByte(indexVar, node.index->type);
     // Set the result
     node.newVar = newV;
 }
-    void codeGvisitor::visit(BinOp& node) {//s3be bukra bkmlha
+void codeGvisitor::visit(BinOp& node) {
      node.left->accept(*this);
     node.right->accept(*this);
-std::string leftNewVar=node.left->newVar;
+    std::string leftNewVar=node.left->newVar;
 std::string rightNewVar=node.right->newVar;
 //auto builtype=node.type;
-    }//today
+    }
     void codeGvisitor::visit(RelOp& node) {
  node.left->accept(*this);
  node.right->accept(*this);
@@ -254,26 +385,34 @@ std::string rightNewVar=node.right->newVar;
     cb->emit(result + " = icmp " + op + " i32 " + leftNewVar + ", " + rightNewVar);
     node.newVar = result;
     }//TODAY
-    void codeGvisitor::visit(Not& node) {node.exp->accept(*this);
-    std::string whatwegot=node.exp->newVar;
-    std::string mancjild=cb->freshVar();
-     cb->emit(mancjild + " = xor i1 " + whatwegot + ", true");
-    if (auto n = dynamic_cast<ast::Not*>(node.exp.get())) {
-        node.beginL = n->beginL;
-    } else if (auto checkrel = dynamic_cast<ast::RelOp*>(node.exp.get())) {
-        node.beginL = checkrel->beginL;
-    } else  {
-        std::string enoughL = cb->freshLabel();
-        cb->emit("br label " + enoughL);
+void codeGvisitor::visit(Not& node) {
+    // Visit the inner expression and get its result
+    node.exp->accept(*this);
+    std::string innerValue = node.exp->newVar;
+
+    // Emit XOR with true to compute logical NOT
+    std::string notResult = cb->freshVar();
+    cb->emit(notResult + " = xor i1 " + innerValue + ", true");
+
+    // Try to inherit an existing control flow label from the inner expression
+    if (auto innerNot = dynamic_cast<ast::Not*>(node.exp.get())) {
+        node.beginL = innerNot->beginL;
+    } else if (auto relExpr = dynamic_cast<ast::RelOp*>(node.exp.get())) {
+        node.beginL = relExpr->beginL;
+    } else {
+        // If no label exists, create a new one for control flow anchoring
+        std::string fallbackLabel = cb->freshLabel();
+        cb->emit("br label " + fallbackLabel);
         cb->emit("");
-        cb->emitLabel(enoughL);
-        node.beginL = enoughL;
+        cb->emitLabel(fallbackLabel);
+        node.beginL = fallbackLabel;
     }
- 
-    
-    node.newVar = mancjild;
-    }
-    void codeGvisitor::visit(And& node) {
+
+    // Store the result variable
+    node.newVar = notResult;
+}
+
+void codeGvisitor::visit(And& node) {
     std::string e5tesarL = cb->freshLabel();
     std::string rightSideLabel = cb->freshLabel();
    
@@ -580,3 +719,6 @@ std::string codeGvisitor::emitOobCheck(const std::string& idxVar,
     cb->emitLabel(okLabel);
     return okLabel;                 // caller continues right after this label
 }
+
+codeGvisitor::codeGvisitor(output::CodeBuffer *cb, SymbolTable *table):cb(cb),
+symbol_table(table) {}

@@ -43,6 +43,8 @@ namespace ast {
         int line;
         std::string newVar; // for every freshVar
         int len = 1;
+        int offset;
+
 
         // Use this constructor only while parsing in bison or flex
         Node();
@@ -123,7 +125,6 @@ namespace ast {
     public:
         // Name of the identifier
         std::string value;
-        int offset;
 
         // Constructor that receives a C-style string that represents the identifier
         explicit ID(const char *str);
