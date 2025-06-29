@@ -72,7 +72,7 @@ void codeGvisitor::visit(FuncDecl& node) {
 
     // Allocate unified local variable space using precomputed offset
     if (node.offset > 0) {
-        cb->emit("%local_vars = alloca i32, i32 " + std::to_string(symbol_table->getCurrentOffset()));
+        cb->emit("%local_vars = alloca i32, i32 " + std::to_string(node.offset));
     }
 
     // Emit code for the function body
@@ -136,11 +136,16 @@ void codeGvisitor::visit(Return& node) {
     }
 }
 ///////////////////////////////While////////////////////////////////////////////
+/*Here or any nested loops/blocks we need to save the Begin and Endl label so
+ * we don't lose them that's why i added stacks*/
 void codeGvisitor::visit(While& node) {
     // Create labels for control flow
     std::string condLabel = cb->freshLabel();     // start of condition check
     std::string bodyLabel = cb->freshLabel();     // loop body
     std::string endLabel = cb->freshLabel();      // after the loop
+
+    beginLabels.push(bodyLabel);
+    endLabels.push(endLabel);
 
     // Unconditional branch to condition check
     cb->emit("br label " + condLabel);
@@ -165,12 +170,123 @@ void codeGvisitor::visit(While& node) {
 
     // Emit loop exit label
     cb->emitLabel(endLabel);
+
+    beginLabels.pop();
+    endLabels.pop();
 }
+///////////////////////////////Break////////////////////////////////////////////
+/*LLVM syntax: br label <end_label>*/
+void codeGvisitor::visit(Break& node) {
+    if(!endLabels.empty()){
+        cb->emit("br label " + endLabels.top());
+    }
+}
+////////////////////////////////Continue////////////////////////////////////////
+/*LLVM syntax: br label <start_label>*/
+void codeGvisitor::visit(Continue& node) {
+    if(!beginLabels.empty()){
+        cb->emit("br label " + beginLabels.top());
+    }
+}
+////////////////////////////////Call////////////////////////////////////////////
+/*LLVM syntax: %result = call <return_type> @function_name(<arg_type1> <arg1>, <arg_type2> <arg2>, ...)*/
+void codeGvisitor::visit(Call& node) {
+    // Visit arguments to evaluate expressions and get their result variables
+    std::vector<std::string> argValues;
+    std::vector<std::string> argTypes;
+
+    for (auto& arg : node.args->exps) {
+        arg->accept(*this);
+        argValues.push_back(arg->newVar);
+        argTypes.push_back(output::changeType(arg->type));  // get LLVM type
+    }
+    std::string funcName = node.func_id->value;
+    BuiltInType returnType = node.type;
+    std::string llvmRetType = output::changeType(returnType);
+
+    // Emit call instruction
+    std::string callInstr;
+    std::string resultVar;
+
+    std::string argsJoined;
+    for (size_t i = 0; i < argValues.size(); ++i) {
+        argsJoined += argTypes[i] + " " + argValues[i];
+        if (i < argValues.size() - 1)
+            argsJoined += ", ";
+    }
+
+    if (returnType == BuiltInType::VOID) {
+        cb->emit("call " + llvmRetType + " @" + funcName + "(" + argsJoined + ")");
+    } else {
+        resultVar = cb->freshVar();
+        cb->emit(resultVar + " = call " + llvmRetType + " @" + funcName + "(" + argsJoined + ")");
+        node.newVar = resultVar;
+    }
+}
+/////////////////////////////////If/////////////////////////////////////////////
+/*LLVM syntax: br i1 <cond>, label <then_label>, label <else_or_end_label>*/
+void codeGvisitor::visit(If& node) {
+    node.condition->accept(*this);
+    std::string condVal = node.condition->newVar;
+
+    std::string thenLabel = cb->freshLabel(); //Then label
+    std::string elseL = node.otherwise ? cb->freshLabel() : "";
+    std::string endLabel = cb->freshLabel();
+    cb->emit("br i1 "+ condVal + ", label " + thenLabel + ", label " +
+    ( elseL.empty() ? endLabel : elseL));
+
+    cb->emitLabel(thenLabel);
+    node.then->accept(*this);
+    cb->emit("br label "+endLabel);
+
+    if(node.otherwise)
+    {
+        cb->emit("");
+        cb->emitLabel(elseL);
+        node.otherwise->accept(*this);
+        cb->emit("br label "+ endLabel);
+
+    }
+    cb->emitLabel(endLabel);
+    cb->emit("");
+}
+/////////////////////////////////BinOp//////////////////////////////////////////
+/*LLVM syntax: %res = add i32 %a, %b <-> a+b*/
+void codeGvisitor::visit(BinOp& node) {
+    // Visit both sides of the expression to compute their values
+    node.left->accept(*this);
+    node.right->accept(*this);
+
+    std::string lhs = node.left->newVar;
+    std::string rhs = node.right->newVar;
+
+    std::string resultVar = cb->freshVar();
+
+    std::string llvmType = output::changeType(node.type);
+    std::string op;
 
 
-void codeGvisitor::visit(Break& node) {}//TODAY
-void codeGvisitor::visit(Continue& node) {}//TODAY
-void codeGvisitor::visit(Call& node) {}
+    switch (node.op) {
+        case BinOpType::ADD:  op = "add";  break;
+        case BinOpType::SUB:  op = "sub";  break;
+        case BinOpType::MUL:  op = "mul";  break;
+        case BinOpType::DIV:  op = "sdiv"; break;
+
+        default:
+           // output::errorOpMismatch(node.line);
+            return;
+    }
+
+    cb->emit(resultVar + " = " + op + " " + llvmType + " " + lhs + ", " + rhs);
+    node.newVar = resultVar;
+}
+//////////////////////////////////Statements////////////////////////////////////
+void codeGvisitor::visit(Statements& node){
+    for (size_t i = 0; i < node.statements.size(); ++i) {
+        node.statements[i]->accept(*this);
+    }
+}
+////////////////////////////////////////////////////////////////////////////////
 
     void codeGvisitor::visit(Assign& node)
      { 
@@ -190,31 +306,8 @@ void codeGvisitor::visit(Call& node) {}
    //  cb->emit(elemPtr +
      //   " = getelementptr " + typeLL + ", " + typeLL + "* " +
      //   basePtr + ", i32 " + indexVar);
-    cb->emit("store " + tyoechanged + " " + expNewVar + ", " + tyoechanged + "* " + castPtr + ", align 4");}
-    void codeGvisitor::visit(If& node) {
-        node.condition->accept(*this);
-        std::string condVal=node.condition->newVar;
-        //now generate the then and else labels and end 
-        std::string thenLabel=cb->freshLabel();
-        std::string elseL= node.otherwise ? cb->freshLabel() : "";
-        std::string endLabel=cb->freshLabel();
-        cb->emit("br i1 "+condVal+ ", label "+thenLabel+ ", label " +( elseL.empty() ? endLabel : elseL));
-        // here we emit the then vlock
-        cb->emitLabel(thenLabel);
-        node.then->accept(*this);
-        cb->emit("br label "+endLabel);
-
-        //else b
-        if(node.otherwise)
-        {cb->emit("");
-        cb->emitLabel(elseL);
-            node.otherwise->accept(*this);
-            cb->emit("br label "+ endLabel);
-
-        }
-        cb->emitLabel(endLabel);
-cb->emit("");
-    }//TODAY
+    cb->emit("store " + tyoechanged + " " + expNewVar + ", " + tyoechanged + "* " + castPtr + ", align 4");
+     }
 
     void codeGvisitor::visit(ExpList& node) {}//done
     void codeGvisitor::visit(ast::ArrayAssign &node) {
@@ -303,13 +396,6 @@ codeGvisitor::widenByte(indexVar, node.index->type);
         }
     }}
 
-
-
-    void codeGvisitor::visit(Statements& node){
-    for (size_t i = 0; i < node.statements.size(); ++i) {
-        node.statements[i]->accept(*this);
-    }
-}//maybe not complete- maybe we need to check last statement if empty}
     void codeGvisitor::visit(Num& node) {
             node.newVar=std::to_string(node.value);
     }
@@ -354,13 +440,7 @@ codeGvisitor::widenByte(indexVar, node.index->type);
     // Set the result
     node.newVar = newV;
 }
-void codeGvisitor::visit(BinOp& node) {
-     node.left->accept(*this);
-    node.right->accept(*this);
-    std::string leftNewVar=node.left->newVar;
-std::string rightNewVar=node.right->newVar;
-//auto builtype=node.type;
-    }
+
     void codeGvisitor::visit(RelOp& node) {
  node.left->accept(*this);
  node.right->accept(*this);
@@ -581,7 +661,7 @@ void codeGvisitor::visit(And& node) {
 
 
     }
-    void codeGvisitor::visit(ArrayDereference& node) {
+void codeGvisitor::visit(ArrayDereference& node) {
     node.id->accept(*this);
   auto type=node.id->type;
   auto changedType=output::changeType(type);

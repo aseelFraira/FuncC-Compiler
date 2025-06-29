@@ -1,6 +1,7 @@
 #ifndef CODEGVISITOR_HPP
 #define CODEGVISITOR_HPP
 #pragma once
+#include <stack>
 
 #include "output.hpp"
 #include "SymbolTable.hpp"
@@ -50,7 +51,8 @@ public:
 
 private:
         output::CodeBuffer *cb;
-        SymbolTable* symbol_table;
+        std::stack<std::string> beginLabels;
+        std::stack<std::string> endLabels;
         BuiltInType currentReturnTypeFunc;
 };
 
