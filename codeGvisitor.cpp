@@ -197,7 +197,6 @@ void codeGvisitor::visit(Call& node) {
     std::vector<std::string> argTypes;
 
     for (int i = 0; i < node.args->exps.size(); i++) {
-        printf("[DEBUG] -- in looooop");
         node.args->exps[i]->accept(*this);
         auto arg = node.args->exps[i];
         if (arg->type == ast::BuiltInType::STRING) {

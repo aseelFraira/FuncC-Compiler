@@ -237,7 +237,10 @@ void SemanticVisitor::visit(Call& node) {
     std::vector<BuiltInType> paramTypes = sig->paramTypes;
 
     node.args->accept(*this);
+    printf("[DEBUG] -- Before");
+
     node.typesOfArgs = symbols.lookupFunc(node.func_id->value)->paramTypes;
+    printf("[DEBUG] -- in After");
 
     // START: HANDLING THE PRINT FUNCTION
     if (node.func_id->value == "print") {
