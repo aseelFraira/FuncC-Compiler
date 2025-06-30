@@ -195,7 +195,7 @@ void codeGvisitor::visit(Call& node) {
     // Visit arguments to evaluate expressions and get their result variables
     std::vector<std::string> argValues;
     std::vector<std::string> argTypes;
-
+    std::cout << "{DEBUG}" << std::endl;
     for (int i = 0; i < node.args->exps.size(); i++) {
         node.args->exps[i]->accept(*this);
         auto arg = node.args->exps[i];

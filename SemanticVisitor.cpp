@@ -239,7 +239,6 @@ void SemanticVisitor::visit(Call& node) {
     node.args->accept(*this);
 
     node.typesOfArgs = symbols.lookupFunc(node.func_id->value)->paramTypes;
-    printf("[DEBUG] -- in After");
 
     // START: HANDLING THE PRINT FUNCTION
     if (node.func_id->value == "print") {
