@@ -15,7 +15,7 @@ declare void @exit(i32)
 @.int_specifier_scan = constant [3 x i8] c"%d\00"
 @.int_specifier = constant [4 x i8] c"%d\0A\00"
 @.str_specifier = constant [4 x i8] c"%s\0A\00"
-@.oob_str = private unnamed_addr constant [19 x i8] c"Error out of bounds\00", align 1
+@.oob_str = private unnamed_addr constant [20 x i8] c"Error out of bounds\00", align 1
 
 define i32 @readi(i32) {
     %ret_val = alloca i32
@@ -789,7 +789,7 @@ std::string codeGvisitor::emitOobCheck(const std::string& idxVar,
     cb->emitLabel(errLabel);
     std::string msgPtr = cb->freshVar();
     cb->emit(msgPtr +
-        " = getelementptr [19 x i8], [19 x i8]* @.oob_str, i32 0, i32 0");
+        " = getelementptr [19 x i8], [20 x i8]* @.oob_str, i32 0, i32 0");
     cb->emit("call void @print(i8* " + msgPtr + ")");
     cb->emit("call void @exit(i32 1)");
     cb->emit("unreachable");
