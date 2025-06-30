@@ -210,7 +210,7 @@ void codeGvisitor::visit(Call& node) {
 
     std::string argsJoined;
     for (size_t i = 0; i < argValues.size(); ++i) {
-        argsJoined += argTypes[i] + " " + argValues[i];
+        argsJoined += argValues[i];
         if (i < argValues.size() - 1)
             argsJoined += ", ";
     }
