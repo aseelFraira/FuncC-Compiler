@@ -515,117 +515,50 @@ void codeGvisitor::visit(Not& node) {
 }
 
 void codeGvisitor::visit(And& node) {
-    std::string e5tesarL = cb->freshLabel();
-    std::string rightSideLabel = cb->freshLabel();
-   
- 
-    std::string finishVar = cb->freshVar();
-       std::string finishL = cb->freshLabel();
-    node.finishL = finishL;
-   
+    std::string falseLabel = cb->freshLabel();   // Short-circuit if left is false
+    std::string rightLabel = cb->freshLabel();   // Evaluate right side if left is true
+    std::string joinLabel = cb->freshLabel();    // Final merge point
+    std::string resultVar = cb->freshVar();      // Holds result of the `and`
+
+    // Save join label for other nodes (like nested `And` or `Or`)
+    node.finishL = joinLabel;
+
+    // Evaluate left expression
     node.left->accept(*this);
-      node.right->accept(*this);
-    std::string LeftSideLabel = node.left->newVar;
-  //we dont need to emit the leftside label because its in newVar leftside 
+    std::string leftVar = node.left->newVar;
 
-   
-    cb->emit("br i1 " + LeftSideLabel + ", label " + rightSideLabel + ", label " + e5tesarL);
+    // Conditional branch based on left side
+    cb->emit("br i1 " + leftVar + ", label " + rightLabel + ", label " + falseLabel);
 
-    
- 
-   
-  
-  cb->emitLabel(rightSideLabel);
-    // mnf7s shu hene el next label 7sb shu el jump ele b3du w mn3mlha mhu 7sb kman shu nu3 el next label ta3na 
-    if (auto n = dynamic_cast<ast::Or*>(node.right.get())) {
-        rightSideLabel = n->finishL;
-    } 
-    else if (auto n = dynamic_cast<ast::Not*>(node.right.get())) {
-      rightSideLabel = n->beginL;}
-    else if (auto n = dynamic_cast<ast::RelOp*>(node.right.get())) {
-        rightSideLabel = n->beginL;
-    } 
-    else if (auto n = dynamic_cast<ast::And*>(node.right.get())) {
-        rightSideLabel = n->finishL;
-    } 
-   
-    
-    
-    
-    //i dont think we need this 
-    // else if (auto funcNode = dynamic_cast<ast::Call*>(node.right.get())) {
-    //     rightSideLabel = funcNode->beginL;
-    // }
-
-    std::string secondnewVar = node.right->newVar;
-    cb->emit("br label " + finishL);
-
-
-    //e5tesar
-    cb->emitLabel(e5tesarL); 
-    cb->emit("br label " + finishL);
-   
-    
-    // phi and join
-    cb->emitLabel(finishL);
-    cb->emit(finishVar + " = phi i1 [ false, " + e5tesarL + " ], [ " + secondnewVar + ", " + rightSideLabel + " ]");
-    
-  
-    node.newVar = finishVar;
-  cb->emit("");
-  
-  
-  
-  
-  
-  
-  
-  
-  /**
-    std::string rightSideLabel= cb->freshLabel();
-    std::string fLab = cb->freshLabel();
-    std::string finishL= cb->freshLabel();
-    std::string finishedVar= cb->freshVar();
-
-
-    node.left->accept(*this);
-  
-    cb->emit("br i1 " + node.left->newVar +
-                    ", label " + rightSideLabel +
-                    ", label " + fLab);//
-
-
-    //this needs an icmp before it that the is_even is true or false
-// br i1 %is_even, label %even_label, label %odd_label
+    // ---- Right side ----
+    cb->emitLabel(rightLabel);
     node.right->accept(*this);
-   cb->emitLabel(rightSideLabel);
-   
-  
-    if (auto n = dynamic_cast<ast::Or*>(node.right.get()))
-       { rightSideLabel = n->finishL;}
-    else if (auto n = dynamic_cast<ast::And*>(node.right.get()))
-      {  rightSideLabel = n->finishL;}
-    else if (auto rel = dynamic_cast<ast::RelOp*>(node.right.get()))
-       { rightSideLabel = rel->beginL;}
-    else if (auto n = dynamic_cast<ast::Not*>(node.right.get()))
-       { rightSideLabel = n->beginL;}
-    else if (auto c = dynamic_cast<ast::Call*>(node.right.get()))
-       { rightSideLabel = c->beginL;}
+    std::string rightVar = node.right->newVar;
 
-    cb->emit("br label " + finishL);        
-
-   // false short-circuit
-    cb->emitLabel(fLab);
-    cb->emit("br label " + finishL);
-
-    // join 
-    cb->emitLabel(finishL);
-    cb->emit(finishedVar +
-        " = phi i1 [ 0, " + fLab + " ], [ " +
-                    node.right->newVar + ", " + rightSideLabel + " ]");
-
-    node.newVar = finishedVar;**/
+    // Determine the right-side originating label if needed
+    std::string rightIncomingLabel = rightLabel;
+    if (auto andNode = dynamic_cast<ast::And*>(node.right.get())) {
+        rightIncomingLabel = andNode->finishL;
+    } else if (auto notNode = dynamic_cast<ast::Not*>(node.right.get())) {
+        rightIncomingLabel = notNode->beginL;
+    } else if (auto relNode = dynamic_cast<ast::RelOp*>(node.right.get())) {
+        rightIncomingLabel = relNode->beginL;
     }
+
+    cb->emit("br label " + joinLabel);
+
+    // ---- Short-circuit false ----
+    cb->emitLabel(falseLabel);
+    cb->emit("br label " + joinLabel);
+
+    // ---- Join block ----
+    cb->emitLabel(joinLabel);
+    cb->emit(resultVar + " = phi i1 [ false, " + falseLabel + " ], [ " + rightVar + ", " + rightIncomingLabel + " ]");
+
+    // Save result
+    node.newVar = resultVar;
+    cb->emit(""); // blank line for clarity
+}
     void codeGvisitor::visit(Or& node) {
         //same thing as and but we alter the short circut evaluation 
     std::string rightSideLabel = cb->freshLabel();
