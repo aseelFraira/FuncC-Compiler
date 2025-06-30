@@ -287,7 +287,6 @@ void codeGvisitor::visit(Statements& node){
     }
 }
 ////////////////////////////////////////////////////////////////////////////////
-
     void codeGvisitor::visit(Assign& node)
      { 
     node.exp->accept(*this);
@@ -800,5 +799,4 @@ std::string codeGvisitor::emitOobCheck(const std::string& idxVar,
     return okLabel;                 // caller continues right after this label
 }
 
-codeGvisitor::codeGvisitor(output::CodeBuffer *cb, SymbolTable *table):cb(cb),
-symbol_table(table) {}
+
