@@ -195,23 +195,21 @@ void codeGvisitor::visit(Call& node) {
     // Visit arguments to evaluate expressions and get their result variables
     std::vector<std::string> argValues;
     std::vector<std::string> argTypes;
+    node.args->accept(*this);
+
     for (int i = 0; i < node.args->exps.size(); i++) {
-        node.args->exps[i]->accept(*this);
         auto arg = node.args->exps[i];
-        arg->accept(*this);
-        std::cout << "{DEBUG} 1" << std::endl;
+        argTypes.push_back(output::changeType(arg->type));
         if (arg->type == ast::BuiltInType::STRING) {//
-            std::cout << "{DEBUG} 2" << std::endl;
             cb->emitString(arg->newVar);
             std::string ptrVar = cb->freshVar();//
             int len = arg->newVar.length() + 1;
             cb->emit(ptrVar + " = getelementptr [" + std::to_string(len) + " x i8], [" +
                     std::to_string(len) + " x i8]* " + arg->newVar + ", i32 0, i32 0");
             argValues.push_back(ptrVar);
-
         }
         else if (arg->type == ast::BuiltInType::BYTE &&
-                 node.typesOfArgs[i] == ast::BuiltInType::INT) {
+                 node.typesOfArgs[i] == ast::BuiltInType::INT) { //maybe should push the new type!
             std::string promotedVar = cb->freshVar();
             cb->emit(promotedVar + " = zext i8 " + arg->newVar + " to i32");
             argValues.push_back(promotedVar);
