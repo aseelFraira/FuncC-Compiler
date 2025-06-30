@@ -197,17 +197,18 @@ void codeGvisitor::visit(Call& node) {
     std::vector<std::string> argTypes;
     for (int i = 0; i < node.args->exps.size(); i++) {
         node.args->exps[i]->accept(*this);
-        std::cout << "{DEBUG} 1" << std::endl;
         auto arg = node.args->exps[i];
-        std::cout << "{DEBUG} 2" << std::endl;
-
         if (arg->type == ast::BuiltInType::STRING) {
             cb->emitString(arg->newVar);
             std::string ptrVar = cb->freshVar();
+            std::cout << "{DEBUG} 1" << std::endl;
+
             int len = arg->newVar.length() + 1;
             cb->emit(ptrVar + " = getelementptr [" + std::to_string(len) + " x i8], [" +
                     std::to_string(len) + " x i8]* " + arg->newVar + ", i32 0, i32 0");
             argValues.push_back(ptrVar);
+            std::cout << "{DEBUG} 2" << std::endl;
+
         }
         else if (arg->type == ast::BuiltInType::BYTE &&
                  node.typesOfArgs[i] == ast::BuiltInType::INT) {
