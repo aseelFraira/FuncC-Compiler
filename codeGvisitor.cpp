@@ -198,9 +198,10 @@ void codeGvisitor::visit(Call& node) {
     for (int i = 0; i < node.args->exps.size(); i++) {
         node.args->exps[i]->accept(*this);
         auto arg = node.args->exps[i];
-        if (arg->type == ast::BuiltInType::STRING) {
+        arg->accept(*this);
+        if (arg->type == ast::BuiltInType::STRING) {//
             cb->emitString(arg->newVar);
-            std::string ptrVar = cb->freshVar();
+            std::string ptrVar = cb->freshVar();//
             std::cout << "{DEBUG} 1" << std::endl;
 
             int len = arg->newVar.length() + 1;
