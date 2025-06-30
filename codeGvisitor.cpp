@@ -195,11 +195,8 @@ void codeGvisitor::visit(Call& node) {
     // Visit arguments to evaluate expressions and get their result variables
     std::vector<std::string> argValues;
     std::vector<std::string> argTypes;
-    std::cout << "{DEBUG} Before" << std::endl;
     for (int i = 0; i < node.args->exps.size(); i++) {
         node.args->exps[i]->accept(*this);
-        std::cout << "{DEBUG} After" << std::endl;
-
         auto arg = node.args->exps[i];
         if (arg->type == ast::BuiltInType::STRING) {
             cb->emitString(arg->newVar);
@@ -208,9 +205,12 @@ void codeGvisitor::visit(Call& node) {
             cb->emit(ptrVar + " = getelementptr [" + std::to_string(len) + " x i8], [" +
                     std::to_string(len) + " x i8]* " + arg->newVar + ", i32 0, i32 0");
             argValues.push_back(ptrVar);
+            std::cout << "{DEBUG} 1" << std::endl;
         }
         else if (arg->type == ast::BuiltInType::BYTE &&
                  node.typesOfArgs[i] == ast::BuiltInType::INT) {
+            std::cout << "{DEBUG} 2" << std::endl;
+
             std::string promotedVar = cb->freshVar();
             cb->emit(promotedVar + " = zext i8 " + arg->newVar + " to i32");
             argValues.push_back(promotedVar);
