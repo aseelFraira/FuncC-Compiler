@@ -408,15 +408,18 @@ codeGvisitor::widenByte(indexVar, node.index->type);
 }}
     void codeGvisitor::visit(ast::PrimitiveType &node){}//done
     void codeGvisitor::visit(ast::Formal &node) {
+    node.id->accept(*this);
           std::string funcp = output::changeType(node.id->type) + " %" + node.id->value;
    cb->emit(funcp);
     }//today
-    void codeGvisitor::visit(ast::Formals &node) { for (size_t i = 0; i < node.formals.size(); ++i) {
+    void codeGvisitor::visit(ast::Formals &node) {
+    for (size_t i = 0; i < node.formals.size(); ++i) {
         node.formals[i]->accept(*this);
-        if (i != node.formals.size() - 1) {
+        if (i < node.formals.size() - 1) {
            cb->emit(", ");
         }
-    }}
+    }
+}
 
     void codeGvisitor::visit(Num& node) {
             node.newVar=std::to_string(node.value);
