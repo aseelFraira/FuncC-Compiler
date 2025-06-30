@@ -1,5 +1,6 @@
 #include "codeGvisitor.hpp"
 #include "output.hpp"
+#include "iostream"
 #include <memory>
 #include <cassert>
 using namespace std;
@@ -197,6 +198,7 @@ void codeGvisitor::visit(Call& node) {
 
     for (auto& arg : node.args->exps) {
         arg->accept(*this);
+        std::cerr << output::changeType(arg->type);
         argValues.push_back(arg->newVar);
         argTypes.push_back(output::changeType(arg->type));  // get LLVM type
     }
@@ -210,7 +212,7 @@ void codeGvisitor::visit(Call& node) {
 
     std::string argsJoined;
     for (size_t i = 0; i < argValues.size(); ++i) {
-        argsJoined += argValues[i];
+        argsJoined += argTypes[i] + " " + argValues[i];
         if (i < argValues.size() - 1)
             argsJoined += ", ";
     }
