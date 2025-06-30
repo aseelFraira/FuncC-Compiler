@@ -215,7 +215,7 @@ void codeGvisitor::visit(Call& node) {
             argValues.push_back(promotedVar);
         }else{
             argValues.push_back(arg->newVar);
-            std::cout << "[Debug] new Var is " <<arg->newVar <<std::endl;
+            std::cerr << "[Debug] new Var is " <<arg->newVar <<std::endl;
         }
     }
 
