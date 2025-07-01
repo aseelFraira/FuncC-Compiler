@@ -13,7 +13,6 @@ codeGvisitor::codeGvisitor(output::CodeBuffer* cb): cb(cb)
 declare i32 @scanf(i8*, ...)
 declare i32 @printf(i8*, ...)
 declare void @exit(i32)
-declare i32 @fflush(i8*)
 @.int_specifier_scan = constant [3 x i8] c"%d\00"
 @.int_specifier = constant [4 x i8] c"%d\0A\00"
 @.str_specifier = constant [4 x i8] c"%s\0A\00"
@@ -144,7 +143,6 @@ void codeGvisitor::visit(VarDecl& node) {
         cb->emit("store " + llvmType + " " + defaultValue + ", " + llvmType + "* " + finalPtr);
     }
 }
-
 ///////////////////////////////Return///////////////////////////////////////////
 void codeGvisitor::visit(Return& node) {
     if (currentReturnTypeFunc == BuiltInType::VOID) {
@@ -384,7 +382,6 @@ void codeGvisitor::visit(BinOp& node) {
         node.newVar = resultVar;
     }
 }
-
 //////////////////////////////////Statements////////////////////////////////////
 void codeGvisitor::visit(Statements& node){
     for (size_t i = 0; i < node.statements.size(); ++i) {
@@ -412,8 +409,9 @@ void codeGvisitor::visit(Statements& node){
      //   basePtr + ", i32 " + indexVar);
     cb->emit("store " + tyoechanged + " " + expNewVar + ", " + tyoechanged + "* " + castPtr + ", align 4");
      }
-
-    void codeGvisitor::visit(ExpList& node) {}//done
+////////////////////////////////////////////////////////////////////////////////
+void codeGvisitor::visit(ExpList& node) {}//done
+////////////////////////////////////////////////////////////////////////////////
 void codeGvisitor::visit(ast::ArrayAssign &node) {
     // Visit child nodes
     node.id->accept(*this);
@@ -465,13 +463,17 @@ void codeGvisitor::visit(ast::ArrayAssign &node) {
     // Store the value
     cb->emit("store " + llvmElemType + " " + valueVar + ", " + llvmElemType + "* " + elemPtr + ", align 4");
 }
-    void codeGvisitor::visit(ast::Funcs& node)
-     {for (std::size_t i = 0; i < node.funcs.size(); ++i) {
-    node.funcs[i]->accept(*this);
-}}
-    void codeGvisitor::visit(ast::PrimitiveType &node){}//done
-    void codeGvisitor::visit(ast::Formal &node) {
-    }//today
+////////////////////////////////////////////////////////////////////////////////
+void codeGvisitor::visit(ast::Funcs& node){
+    for (std::size_t i = 0; i < node.funcs.size(); ++i){
+        node.funcs[i]->accept(*this);
+    }
+}
+////////////////////////////////////////////////////////////////////////////////
+void codeGvisitor::visit(ast::PrimitiveType &node){}//done
+////////////////////////////////////////////////////////////////////////////////
+void codeGvisitor::visit(ast::Formal &node){}//today
+////////////////////////////////////////////////////////////////////////////////
 void codeGvisitor::visit(ast::Formals &node) {
     std::string argsLine;
     for (size_t i = 0; i < node.formals.size(); ++i) {
@@ -485,29 +487,25 @@ void codeGvisitor::visit(ast::Formals &node) {
     }
     cb->emit(argsLine);
 }
-
-
-
-    void codeGvisitor::visit(Num& node) {
-            node.newVar=std::to_string(node.value);
-    }
-    void codeGvisitor::visit(NumB& node)
-     {node.newVar=std::to_string(node.value);}
-    void codeGvisitor::visit(String& node)
-     {
-        node.newVar=(node.value);
-     }
-     void codeGvisitor::visit(Bool& node)
-    {
-         if(node.value==true){
-             node.newVar="true";
-         }
-    else{
-        node.newVar="false";
-    }
- }
-    void codeGvisitor::visit(ID& node)
-    {//today
+////////////////////////////////////////////////////////////////////////////////
+void codeGvisitor::visit(Num& node) {
+    node.newVar = std::to_string(node.value);
+}
+////////////////////////////////////////////////////////////////////////////////
+void codeGvisitor::visit(NumB& node) {
+    node.newVar = std::to_string(node.value);
+}
+////////////////////////////////////////////////////////////////////////////////
+void codeGvisitor::visit(String& node) {
+    node.newVar = node.value;
+}
+////////////////////////////////////////////////////////////////////////////////
+void codeGvisitor::visit(Bool& node) {
+    node.newVar = node.value ? "true" : "false";
+}
+////////////////////////////////////////////////////////////////////////////////
+void codeGvisitor::visit(ID& node)
+{//today
     if (node.offset < 0) {
         node.newVar = "%" + node.value;
         return;
@@ -533,7 +531,7 @@ void codeGvisitor::visit(ast::Formals &node) {
     // Set the result
     node.newVar = newV;
 }
-
+////////////////////////////////////////////////////////////////////////////////
 void codeGvisitor::visit(RelOp& node) {
     // Evaluate both sides
     node.left->accept(*this);
@@ -571,6 +569,7 @@ void codeGvisitor::visit(RelOp& node) {
     // Store the result
     node.newVar = result;
 }
+////////////////////////////////////////////////////////////////////////////////
 void codeGvisitor::visit(Not& node) {
     // Visit the inner expression and get its result
     node.exp->accept(*this);
@@ -597,7 +596,7 @@ void codeGvisitor::visit(Not& node) {
     // Store the result variable
     node.newVar = notResult;
 }
-
+////////////////////////////////////////////////////////////////////////////////
 void codeGvisitor::visit(And& node) {
 
     std::string falseLabel = cb->freshLabel();   // Short-circuit if left is false
@@ -644,6 +643,7 @@ void codeGvisitor::visit(And& node) {
     node.newVar = resultVar;
     cb->emit(""); // blank line for clarity
 }
+////////////////////////////////////////////////////////////////////////////////
 void codeGvisitor::visit(Or& node) {
     std::string evalRightLabel = cb->freshLabel();  // where to go if left is false
     std::string shortCircuitLabel = cb->freshLabel(); // if left is true (shortcut)
@@ -690,7 +690,7 @@ void codeGvisitor::visit(Or& node) {
     node.newVar = resultVar;
     cb->emit(""); // spacing
 }
-
+////////////////////////////////////////////////////////////////////////////////
 void codeGvisitor::visit(ArrayDereference& node) {
     node.id->accept(*this);
     node.index->accept(*this);
@@ -719,7 +719,8 @@ void codeGvisitor::visit(ArrayDereference& node) {
 
     node.newVar = loaded;
 }
-    void codeGvisitor::visit(Cast& node) 
+////////////////////////////////////////////////////////////////////////////////
+void codeGvisitor::visit(Cast& node)
     {
           // Visit the expression to generate its code
     node.exp->accept(*this);
@@ -807,8 +808,6 @@ std::string codeGvisitor::emitOobCheck(const std::string& idxVar,
     cb->emit(msgPtr + " = getelementptr [20 x i8], [20 x i8]* @.oob_str, i32 0, i32 0");
     cb->emit("call void @print(i8* " + msgPtr + ")");
 
-    // --- Flush stdout before exiting ---
-    cb->emit("call i32 @fflush(i8* null)");
 
     cb->emit("call void @exit(i32 1)");
     cb->emit("unreachable");
