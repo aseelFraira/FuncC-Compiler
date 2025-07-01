@@ -305,16 +305,18 @@ void codeGvisitor::visit(BinOp& node) {
     std::string rhs = node.right->newVar;
 
     // Widen BYTE to INT if needed
-    if (node.left->type == BuiltInType::BYTE) {
-        std::string widenedLHS = cb->freshVar();
-        cb->emit(widenedLHS + " = zext i8 " + lhs + " to i32");
-        lhs = widenedLHS;
-    }
+    if(node.type == BuiltInType::INT) {
+        if (node.left->type == BuiltInType::BYTE) {
+            std::string widenedLHS = cb->freshVar();
+            cb->emit(widenedLHS + " = zext i8 " + lhs + " to i32");
+            lhs = widenedLHS;
+        }
 
-    if (node.right->type == BuiltInType::BYTE) {
-        std::string widenedRHS = cb->freshVar();
-        cb->emit(widenedRHS + " = zext i8 " + rhs + " to i32");
-        rhs = widenedRHS;
+        if (node.right->type == BuiltInType::BYTE) {
+            std::string widenedRHS = cb->freshVar();
+            cb->emit(widenedRHS + " = zext i8 " + rhs + " to i32");
+            rhs = widenedRHS;
+        }
     }
 
     std::string resultVar = cb->freshVar();
