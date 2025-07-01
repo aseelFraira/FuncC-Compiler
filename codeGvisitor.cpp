@@ -81,8 +81,7 @@ void codeGvisitor::visit(FuncDecl& node) {
         const std::string& name = formal->id->value;
         int offset = formal->id->offset;  // this should be set in semantic phase
         std::string llvmType = output::changeType(formal->id->type);
-        if(formal->id->type != ast::VOID) {
-
+        if(llvmType != "void") {
             // %ptr = getelementptr i32, i32* %local_vars, i32 offset
             std::string ptrVar = cb->freshVar();
             cb->emit(ptrVar + " = getelementptr i32, i32* %local_vars, i32 " +
