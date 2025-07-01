@@ -223,7 +223,6 @@ void codeGvisitor::visit(Call& node) {
     for (int i = 0; i < node.args->exps.size(); i++) {
         const auto &arg = node.args->exps[i];
         arg->accept(*this);
-        std::cerr << "The value is " <<arg->newVar <<std::endl;
         argTypes.push_back(output::changeType(arg->type));
         if (arg->type == ast::BuiltInType::STRING) {//
             string strArray = cb->emitString(arg->newVar);
@@ -693,53 +692,37 @@ void codeGvisitor::visit(Or& node) {
 }
 
 void codeGvisitor::visit(ArrayDereference& node) {
-
     node.id->accept(*this);
-  auto type=node.id->type;
-  auto changedType=output::changeType(type);
     node.index->accept(*this);
-    std::string indexVar=node.index->newVar;
-     codeGvisitor::widenByte(indexVar, node.index->type);
-        //     if (node.index->type == ast::BuiltInType::BYTE) {
-        //     std::string z = cb->freshVar();
-        //     cb->emit(z + " = zext i8 " + indexVar + " to i32");
-        //     indexVar = z;
-        // }
-auto len =(node.id->len);
- emitOobCheck(indexVar, len);
-    int offset=node.id->offset;
-std::string getElement=cb->freshVar();
-    cb->emit(getElement + " = getelementptr i32, i32* %local_vars, i32 " +
-             std::to_string(offset));
 
- /* ---------- 3.  Bit-cast slot pointer to the real element type ---------- */
-    std::string basePtr = cb->freshVar();                            
-    cb->emit(basePtr + " = bitcast i32* " + getElement +           
-             " to " + changedType + "*");                           
-     //std::string indexVar = node.index->newVar;
-     std::string elemPtr = cb->freshVar();
+    std::string indexVar = node.index->newVar;
+    codeGvisitor::widenByte(indexVar, node.index->type);
 
-   
-    cb->emit(elemPtr + " = getelementptr " + changedType + ", " +
-             changedType + "* " + basePtr + ", i32 " + indexVar);
+    auto len = node.id->len;
+    std::string okLabel = emitOobCheck(indexVar, len);
 
-   
-    // std::string label=cb->freshVar();
-    // cb->emit(label+" = load "+changedType+", "+changedType+"* "+elemPtr);
-  std::string label = cb->freshVar();
-    cb->emit(label + " = load " + changedType + ", " + changedType +
-             "* " + elemPtr + ", align 4");   
+    // --- Jump to continuation label if bounds check passes ---
+    cb->emit("br label " + okLabel);
+    cb->emitLabel(okLabel);  // <- Needed!
 
-node.newVar=label;
-// %print_ptr = getelementptr i32, i32* %arr, i32 %print_index   ; ① compute address
-// %element   = load i32, i32* %print_ptr                        ; ② fetch value
+    int offset = node.id->offset;
+    std::string basePtrRaw = cb->freshVar();
+    cb->emit(basePtrRaw + " = getelementptr i32, i32* %local_vars, i32 " + std::to_string(offset));
 
-//  cb->emit(elemPtr +
-     //   " = getelementptr " + typeLL + ", " + typeLL + "* " +
-     //   basePtr + ", i32 " + indexVar);
+    auto elemType = node.id->type;
+    std::string llvmElemType = output::changeType(elemType);
 
+    std::string basePtr = cb->freshVar();
+    cb->emit(basePtr + " = bitcast i32* " + basePtrRaw + " to " + llvmElemType + "*");
 
-    }//today
+    std::string elemPtr = cb->freshVar();
+    cb->emit(elemPtr + " = getelementptr " + llvmElemType + ", " + llvmElemType + "* " + basePtr + ", i32 " + indexVar);
+
+    std::string loaded = cb->freshVar();
+    cb->emit(loaded + " = load " + llvmElemType + ", " + llvmElemType + "* " + elemPtr + ", align 4");
+
+    node.newVar = loaded;
+}
     void codeGvisitor::visit(Cast& node) 
     {
           // Visit the expression to generate its code
