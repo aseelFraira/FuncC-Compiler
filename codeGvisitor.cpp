@@ -484,30 +484,40 @@ void codeGvisitor::visit(ast::Formals &node) {
     node.newVar = newV;
 }
 
-    void codeGvisitor::visit(RelOp& node) {
- node.left->accept(*this);
- node.right->accept(*this);
- std::string leftNewVar=node.left->newVar;
- std::string rightNewVar=node.right->newVar;
+void codeGvisitor::visit(RelOp& node) {
+    // Evaluate both sides
+    node.left->accept(*this);
+    node.right->accept(*this);
 
- //did w ch an 
- 
-    codeGvisitor::widenByte(leftNewVar, node.left ->type);
+    std::string leftNewVar = node.left->newVar;
+    std::string rightNewVar = node.right->newVar;
+
+    // Handle byte-to-int promotion if needed
+    codeGvisitor::widenByte(leftNewVar, node.left->type);
     codeGvisitor::widenByte(rightNewVar, node.right->type);
-   std::string result= cb->freshVar();
+
+    // Emit a label for this comparison (needed by Or/And expressions)
+    node.beginL = cb->freshLabel();
+    cb->emitLabel(node.beginL);
+
+    // Determine comparison operation
+    std::string result = cb->freshVar();
     std::string op;
+
     switch (node.op) {
-    case ast::RelOpType::EQ: op = "eq";  break;
-   
-    case ast::RelOpType::LT: op = "slt"; break;
-    case ast::RelOpType::GT: op = "sgt"; break;
-    case ast::RelOpType::LE: op = "sle"; break;
-    case ast::RelOpType::NE: op = "ne";  break;
-    case ast::RelOpType::GE: op = "sge"; break;
+        case ast::RelOpType::EQ: op = "eq";  break;
+        case ast::RelOpType::NE: op = "ne";  break;
+        case ast::RelOpType::LT: op = "slt"; break;
+        case ast::RelOpType::GT: op = "sgt"; break;
+        case ast::RelOpType::LE: op = "sle"; break;
+        case ast::RelOpType::GE: op = "sge"; break;
     }
+
     cb->emit(result + " = icmp " + op + " i32 " + leftNewVar + ", " + rightNewVar);
+
+    // Store the result
     node.newVar = result;
-    }//TODAY
+}
 void codeGvisitor::visit(Not& node) {
     // Visit the inner expression and get its result
     node.exp->accept(*this);
