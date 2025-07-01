@@ -389,7 +389,7 @@ void codeGvisitor::visit(Statements& node){
     }
 }
 ////////////////////////////////////////////////////////////////////////////////
-    void codeGvisitor::visit(Assign& node)
+void codeGvisitor::visit(Assign& node)
      { 
     node.exp->accept(*this);
     auto expNewVar = node.exp->newVar;

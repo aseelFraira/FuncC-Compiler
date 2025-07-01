@@ -67,12 +67,12 @@ void SemanticVisitor::visit(VarDecl& node) {
         isArray = true;
         declaredType = arrayType->type;
         node.len = arrayType->len;
+        std::cerr << "[DEBUG]The len of array is " << arrayType->len << std::endl;
         node.id->len = arrayType->len;
     } else {
         output::errorMismatch(node.line);
         return;
     }
-
     // Analyze initializer expression if exists
     if (node.init_exp) {
         node.init_exp->accept(*this);
