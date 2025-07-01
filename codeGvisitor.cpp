@@ -424,7 +424,7 @@ void codeGvisitor::visit(ast::Formals &node) {
     cb->emit(argsLine);
 }
 
-}
+
 
     void codeGvisitor::visit(Num& node) {
             node.newVar=std::to_string(node.value);
