@@ -496,9 +496,6 @@ void codeGvisitor::visit(RelOp& node) {
     codeGvisitor::widenByte(leftNewVar, node.left->type);
     codeGvisitor::widenByte(rightNewVar, node.right->type);
 
-    // Emit a label for this comparison (needed by Or/And expressions)
-    node.beginL = cb->freshLabel();
-    cb->emitLabel(node.beginL);
 
     // Determine comparison operation
     std::string result = cb->freshVar();
@@ -514,6 +511,12 @@ void codeGvisitor::visit(RelOp& node) {
     }
 
     cb->emit(result + " = icmp " + op + " i32 " + leftNewVar + ", " + rightNewVar);
+
+    // Emit a label after the comparison so parent expressions can reference it
+    node.beginL = cb->freshLabel();
+    cb->emit("br label " + node.beginL);
+    cb->emit("");
+    cb->emitLabel(node.beginL);
 
     // Store the result
     node.newVar = result;
