@@ -64,7 +64,7 @@ void codeGvisitor::visit(FuncDecl& node) {
     cb->emit("define " + llvmReturnType + " @" + funcName + "(");
 
     // Visit and emit parameter declarations
- //   node.formals->accept(*this);
+    node.formals->accept(*this);
     cb->emit(") {");
     cb->emit(""); // spacing for readability
 
@@ -409,17 +409,21 @@ codeGvisitor::widenByte(indexVar, node.index->type);
 }}
     void codeGvisitor::visit(ast::PrimitiveType &node){}//done
     void codeGvisitor::visit(ast::Formal &node) {
-    node.id->accept(*this);
-          std::string funcp = output::changeType(node.id->type) + " %" + node.id->value;
-   cb->emit(funcp);
     }//today
-    void codeGvisitor::visit(ast::Formals &node) {
+void codeGvisitor::visit(ast::Formals &node) {
+    std::string argsLine;
     for (size_t i = 0; i < node.formals.size(); ++i) {
-        node.formals[i]->accept(*this);
+        auto &formal = node.formals[i];
+        std::string argType = output::changeType(formal->id->type);
+        std::string argName = "%" + formal->id->value;
+        argsLine += argType + " " + argName;
         if (i < node.formals.size() - 1) {
-           cb->emit(", ");
+            argsLine += ", ";
         }
     }
+    cb->emit(argsLine);
+}
+
 }
 
     void codeGvisitor::visit(Num& node) {
