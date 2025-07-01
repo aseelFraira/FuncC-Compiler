@@ -414,7 +414,6 @@ void codeGvisitor::visit(ast::Formals &node) {
     std::string argsLine;
     for (size_t i = 0; i < node.formals.size(); ++i) {
         auto &formal = node.formals[i];
-        formal->id->accept(*this);
         std::string argType = output::changeType(formal->id->type);
         std::string argName = "%" + formal->id->value;
         argsLine += argType + " " + argName;

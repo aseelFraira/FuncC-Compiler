@@ -144,6 +144,8 @@ void SemanticVisitor::visit(FuncDecl& node) {
             continue;
         }
         const std::string& varName = formal->id->value;
+        formal->id->type = typeNode->type;
+
         bool success = symbols.declareParam(varName, typeNode->type, false, node.len);
         if (!success) {
             output::errorDef(formal->line, varName);
