@@ -815,40 +815,43 @@ node.newVar=label;
     }
 }
 std::string codeGvisitor::emitOobCheck(const std::string& idxVar,
-                                         int length)
+                                       int length)
 {
     std::string okLabel  = cb->freshLabel();
     std::string errLabel = cb->freshLabel();
 
-    /* idx < 0 ? */
+    // Compare index < 0
     std::string isNeg = cb->freshVar();
     cb->emit(isNeg + " = icmp slt i32 " + idxVar + ", 0");
 
+    // Compare index < length
     std::string inRange = cb->freshVar();
     cb->emit(inRange + " = icmp slt i32 " + idxVar + ", " + std::to_string(length));
 
+    // !isNeg
     std::string notNeg = cb->freshVar();
     cb->emit(notNeg + " = xor i1 " + isNeg + ", true");
 
+    // ok = !isNeg && inRange
     std::string ok = cb->freshVar();
     cb->emit(ok + " = and i1 " + inRange + ", " + notNeg);
 
-
-    /* conditional branch */
+    // Branch
     cb->emit("br i1 " + ok + ", label " + okLabel + ", label " + errLabel);
 
-    /* -------- error block -------- */
+    // ----- Error block -----
     cb->emitLabel(errLabel);
     std::string msgPtr = cb->freshVar();
-    cb->emit(msgPtr +
-        " = getelementptr [20 x i8], [20 x i8]* @.oob_str, i32 0, i32 0");
+    cb->emit(msgPtr + " = getelementptr [20 x i8], [20 x i8]* @.oob_str, i32 0, i32 0");
     cb->emit("call void @print(i8* " + msgPtr + ")");
+
+    // --- Flush stdout before exiting ---
+    cb->emit("call i32 @fflush(i8* null)");
+
     cb->emit("call void @exit(i32 1)");
     cb->emit("unreachable");
 
-    /* -------- ok block opens here -------- */
+    // ----- Continue here if check passed -----
     cb->emitLabel(okLabel);
-    return okLabel;                 // caller continues right after this label
+    return okLabel;
 }
-
-
