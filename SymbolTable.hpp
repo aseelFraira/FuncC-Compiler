@@ -11,6 +11,7 @@ struct VariableInfo {
     ast::BuiltInType type;
     bool isArray;
     int offset;
+    int length;
 };
 
 struct FunctionInfo {

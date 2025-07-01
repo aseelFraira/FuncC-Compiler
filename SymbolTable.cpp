@@ -31,7 +31,7 @@ bool SymbolTable::declareVar(const std::string& name, ast::BuiltInType type,bool
     if (currentScope.count(name)) {
         return false;  // Variable already declared in this scope
     }
-    currentScope[name] = { type, isArr,currentOffset };
+    currentScope[name] = { type, isArr,currentOffset,size };
 
     currentOffset += size;
 

@@ -377,6 +377,7 @@ void SemanticVisitor::visit(ast::ArrayAssign& node) { // should allow normal ass
         output::errorMismatch(node.line);
     }
     auto var = symbols.lookupVar(node.id->value);
+
     if (!var)
     {
         output::errorUndef(node.line, node.id->value);
@@ -605,6 +606,7 @@ void SemanticVisitor::visit(ID& node) {
         output::errorUndef(node.line, node.value);
     } else {
         node.type = t->type;
+        node.len = t->length;
     }
 }
 
