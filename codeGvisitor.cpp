@@ -64,7 +64,7 @@ void codeGvisitor::visit(FuncDecl& node) {
     cb->emit("define " + llvmReturnType + " @" + funcName + "(");
 
     // Visit and emit parameter declarations
-    node.formals->accept(*this);
+ //   node.formals->accept(*this);
     cb->emit(") {");
     cb->emit(""); // spacing for readability
 
@@ -217,7 +217,6 @@ void codeGvisitor::visit(Call& node) {
             argValues.push_back(promotedVar);
         }else{
             argValues.push_back(arg->newVar);
-            std::cerr << "[Debug] new Var is " <<arg->newVar <<std::endl;
         }
     }
 
