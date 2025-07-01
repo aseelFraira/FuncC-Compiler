@@ -328,12 +328,49 @@ void codeGvisitor::visit(BinOp& node) {
     std::string resultVar = cb->freshVar();
     std::string op;
     switch (node.op) {
-        case BinOpType::ADD:  op = "add";  break;
-        case BinOpType::SUB:  op = "sub";  break;
-        case BinOpType::MUL:  op = "mul";  break;
-        case BinOpType::DIV:  op = "sdiv"; break;
-        default: return; // Unknown op; skip codegen
+        case BinOpType::ADD:
+            op = "add";
+            break;
+        case BinOpType::SUB:
+            op = "sub";
+            break;
+        case BinOpType::MUL:
+            op = "mul";
+            break;
+        case BinOpType::DIV: {
+            op = "sdiv";
+            std::string DivByZeroLabel = cb->freshLabel();
+            std::string ValidLabel = cb->freshLabel();
+            std::string endLabel = cb->freshLabel();
+
+            std::string isZero = cb->freshVar();
+            cb->emit(isZero + " = icmp eq i32 " + rhs + ", 0");
+            cb->emit("br i1 " + isZero + ", label " + DivByZeroLabel +
+                     ", label " + ValidLabel);
+
+            cb->emitLabel(DivByZeroLabel);
+            std::string DivByZeroMsg = cb->emitString("Error division by zero");
+            std::string DivByZeroptr = cb->freshVar();
+            cb->emit(DivByZeroptr + " = getelementptr [23 x i8], [23 x i8]* " +
+                     DivByZeroMsg + ", i32 0, i32 0");
+            cb->emit("call void @print(i8* " + DivByZeroptr + ")");
+            cb->emit("call void @exit(i32 1)");
+            cb->emit("br label " +
+                     ValidLabel);  // Not needed since @exit will terminate, but fine for LLVM.
+
+            cb->emitLabel(ValidLabel);
+            cb->emit(resultVar + " = sdiv i32 " + lhs + ", " + rhs);
+            cb->emit("br label " + endLabel);
+
+            cb->emitLabel(endLabel);
+
+            node.newVar = resultVar;
+            return;
+        }
+        default:
+            return; // Unknown op; skip codegen
     }
+
 
     cb->emit(resultVar + " = " + op + " " + opType + " " + lhs + ", " + rhs);
 
