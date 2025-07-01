@@ -45,6 +45,7 @@ SemanticVisitor::SemanticVisitor(output::ScopePrinter* printer)
 //Problem 1: We must pass to the symbols table the size of array to align the
 // offsets
 void SemanticVisitor::visit(VarDecl& node) {
+    node.id->accept(*this);
     const std::string& varName = node.id->value;
     BuiltInType declaredType;
     bool isArray = false;

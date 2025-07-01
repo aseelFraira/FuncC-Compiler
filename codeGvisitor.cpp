@@ -81,8 +81,6 @@ void codeGvisitor::visit(FuncDecl& node) {
         const std::string& name = formal->id->value;
         int offset = formal->id->offset;  // this should be set in semantic phase
         std::string llvmType = output::changeType(formal->id->type);
-            std::cerr << "The formals size is " << node.formals->formals.size() <<" the name of it is "
-            << formal->id->value << " of function named " << funcName <<std::endl;
             // %ptr = getelementptr i32, i32* %local_vars, i32 offset
             std::string ptrVar = cb->freshVar();
             cb->emit(ptrVar + " = getelementptr i32, i32* %local_vars, i32 " +
@@ -121,7 +119,7 @@ void codeGvisitor::visit(FuncDecl& node) {
 }
 ///////////////////////////////VarDecl//////////////////////////////////////////
 void codeGvisitor::visit(VarDecl& node) {
-    node.id->accept(*this);
+
     std::string llvmType = output::changeType(node.id->type);
 
     std::string ptrVar = cb->freshVar();
@@ -475,6 +473,7 @@ void codeGvisitor::visit(ast::Formals &node) {
     // Local variables (from local_vars array)
     const int offset = node.offset;
     const std::string ltype =output::changeType(node.type);
+
 
     // Compute address of the variable: %addr = getelementptr ...
     std::string inbetweenadrrs = cb->freshVar();
