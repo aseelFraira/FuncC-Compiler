@@ -68,8 +68,6 @@ void SemanticVisitor::visit(VarDecl& node) {
         declaredType = arrayType->type;
         node.len = arrayType->len;
         node.id->len = arrayType->len;
-        std::cerr << "[DEBUG]The len of array is " << node.len << std::endl;
-
     } else {
         output::errorMismatch(node.line);
         return;
@@ -402,6 +400,8 @@ void SemanticVisitor::visit(ast::ArrayAssign& node) { // should allow normal ass
     {
         output::errorMismatch(node.line);
     }
+    std::cerr << "[DEBUG - SV - Arrayassign]The len of array is " << node.id->len << std::endl;
+
 }
 
 
