@@ -13,6 +13,7 @@ codeGvisitor::codeGvisitor(output::CodeBuffer* cb): cb(cb)
 declare i32 @scanf(i8*, ...)
 declare i32 @printf(i8*, ...)
 declare void @exit(i32)
+declare i32 @fflush(i8*)
 @.int_specifier_scan = constant [3 x i8] c"%d\00"
 @.int_specifier = constant [4 x i8] c"%d\0A\00"
 @.str_specifier = constant [4 x i8] c"%s\0A\00"
