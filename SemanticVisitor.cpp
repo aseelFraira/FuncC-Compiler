@@ -535,6 +535,7 @@ void SemanticVisitor::visit(BinOp &node) {
     BuiltInType lhs = node.left->type;
     BuiltInType rhs = node.right->type;
 
+
     if(!SemanticVisitor::isNumericType(lhs) || !SemanticVisitor::isNumericType(rhs)){
         output::errorMismatch(node.line);
     }

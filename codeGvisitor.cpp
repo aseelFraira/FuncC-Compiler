@@ -305,7 +305,6 @@ void codeGvisitor::visit(BinOp& node) {
     std::string rhs = node.right->newVar;
 
     // Widen BYTE to INT if needed
-    if(node.type == BuiltInType::INT) {
         if (node.left->type == BuiltInType::BYTE) {
             std::string widenedLHS = cb->freshVar();
             cb->emit(widenedLHS + " = zext i8 " + lhs + " to i32");
@@ -317,8 +316,6 @@ void codeGvisitor::visit(BinOp& node) {
             cb->emit(widenedRHS + " = zext i8 " + rhs + " to i32");
             rhs = widenedRHS;
         }
-    }
-
     std::string resultVar = cb->freshVar();
     std::string llvmType = "i32"; // Always operate in i32 after widening
 
@@ -330,6 +327,13 @@ void codeGvisitor::visit(BinOp& node) {
         case BinOpType::DIV:  op = "sdiv"; break;
         default:
             return;
+    }
+    if (node.type == ast::BuiltInType::BYTE) {
+        std::string truncVar = cb->freshVar();
+        cb->emit(truncVar + " = trunc i32 " + resultVar + " to i8");
+        node.newVar = truncVar;
+    } else {
+        node.newVar = resultVar;
     }
 
     cb->emit(resultVar + " = " + op + " " + llvmType + " " + lhs + ", " + rhs);
