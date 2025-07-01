@@ -297,48 +297,56 @@ void codeGvisitor::visit(If& node) {
 /////////////////////////////////BinOp//////////////////////////////////////////
 /*LLVM syntax: %res = add i32 %a, %b <-> a+b*/
 void codeGvisitor::visit(BinOp& node) {
-    // Visit both operands
+    // Visit both operands first
     node.left->accept(*this);
     node.right->accept(*this);
 
     std::string lhs = node.left->newVar;
     std::string rhs = node.right->newVar;
 
-    // Widen BYTE to INT if needed
+    BuiltInType resultType = node.type;
+    std::string resultLLVMType = output::changeType(resultType);
+
+    // Determine operation type (i32 if either operand is INT or if result is INT)
+    bool needsWidening = resultType == BuiltInType::INT;
+    std::string opType = needsWidening ? "i32" : "i8";
+
+    // Widen operands to i32 only if needed
+    if (needsWidening) {
         if (node.left->type == BuiltInType::BYTE) {
             std::string widenedLHS = cb->freshVar();
             cb->emit(widenedLHS + " = zext i8 " + lhs + " to i32");
             lhs = widenedLHS;
         }
-
         if (node.right->type == BuiltInType::BYTE) {
             std::string widenedRHS = cb->freshVar();
             cb->emit(widenedRHS + " = zext i8 " + rhs + " to i32");
             rhs = widenedRHS;
         }
-    std::string resultVar = cb->freshVar();
-    std::string llvmType = "i32"; // Always operate in i32 after widening
+    }
 
+    std::string resultVar = cb->freshVar();
     std::string op;
     switch (node.op) {
         case BinOpType::ADD:  op = "add";  break;
         case BinOpType::SUB:  op = "sub";  break;
         case BinOpType::MUL:  op = "mul";  break;
         case BinOpType::DIV:  op = "sdiv"; break;
-        default:
-            return;
+        default: return; // Unknown op; skip codegen
     }
-    if (node.type == ast::BuiltInType::BYTE) {
+
+    cb->emit(resultVar + " = " + op + " " + opType + " " + lhs + ", " + rhs);
+
+    // Truncate result back to i8 if final result should be BYTE
+    if (resultType == BuiltInType::BYTE && needsWidening) {
         std::string truncVar = cb->freshVar();
         cb->emit(truncVar + " = trunc i32 " + resultVar + " to i8");
         node.newVar = truncVar;
     } else {
         node.newVar = resultVar;
     }
-
-    cb->emit(resultVar + " = " + op + " " + llvmType + " " + lhs + ", " + rhs);
-    node.newVar = resultVar;
 }
+
 //////////////////////////////////Statements////////////////////////////////////
 void codeGvisitor::visit(Statements& node){
     for (size_t i = 0; i < node.statements.size(); ++i) {
