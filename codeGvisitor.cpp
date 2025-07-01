@@ -81,17 +81,24 @@ void codeGvisitor::visit(FuncDecl& node) {
         const std::string& name = formal->id->value;
         int offset = formal->id->offset;  // this should be set in semantic phase
         std::string llvmType = output::changeType(formal->id->type);
+        if(formal->id->type != ast::VOID) {
 
-        // %ptr = getelementptr i32, i32* %local_vars, i32 offset
-        std::string ptrVar = cb->freshVar();
-        cb->emit(ptrVar + " = getelementptr i32, i32* %local_vars, i32 " + std::to_string(offset));
+            // %ptr = getelementptr i32, i32* %local_vars, i32 offset
+            std::string ptrVar = cb->freshVar();
+            cb->emit(ptrVar + " = getelementptr i32, i32* %local_vars, i32 " +
+                     std::to_string(offset));
 
-        // %typed_ptr = bitcast i32* %ptr to TYPE*
-        std::string typedPtr = cb->freshVar();
-        cb->emit(typedPtr + " = bitcast i32* " + ptrVar + " to " + llvmType + "*");
+            // %typed_ptr = bitcast i32* %ptr to TYPE*
+            std::string typedPtr = cb->freshVar();
+            cb->emit(
+                    typedPtr + " = bitcast i32* " + ptrVar + " to " + llvmType +
+                    "*");
 
-        // store TYPE %param, TYPE* %typed_ptr
-        cb->emit("store " + llvmType + " %" + name + ", " + llvmType + "* " + typedPtr);
+            // store TYPE %param, TYPE* %typed_ptr
+            cb->emit(
+                    "store " + llvmType + " %" + name + ", " + llvmType + "* " +
+                    typedPtr);
+        }
     }
 
     // Emit function body
