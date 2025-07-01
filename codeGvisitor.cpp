@@ -104,7 +104,7 @@ void codeGvisitor::visit(VarDecl& node) {
     std::string llvmType = output::changeType(node.id->type);
 
     std::string ptrVar = cb->freshVar();
-    cb->emit(ptrVar + " = getelementptr (i32), i32* %local_vars, i32 " +
+    cb->emit(ptrVar + " = getelementptr i32, i32* %local_vars, i32 " +
              std::to_string(node.id->offset));
 
 
@@ -318,7 +318,7 @@ void codeGvisitor::visit(Statements& node){
    
     int off = node.id->offset; 
     std::string offPoi = cb->freshVar();
-         cb->emit(offPoi + " = getelementptr (i32), i32* %local_vars, i32 " + std::to_string(off));
+         cb->emit(offPoi + " = getelementptr i32, i32* %local_vars, i32 " + std::to_string(off));
 
   
     std::string tyoechanged = output::changeType(node.exp->type); 
@@ -355,7 +355,7 @@ codeGvisitor::widenByte(indexVar, node.index->type);
      int baseoff = node.id->offset;
      std::string newbasePtrI32 = cb->freshVar();
         cb->emit(newbasePtrI32 +
-                 " = getelementptr (i32), i32* %local_vars, i32 " +
+                 " = getelementptr i32, i32* %local_vars, i32 " +
                  std::to_string(baseoff));
 
    
@@ -457,7 +457,7 @@ void codeGvisitor::visit(ast::Formals &node) {
 
     // Compute address of the variable: %addr = getelementptr ...
     std::string inbetweenadrrs = cb->freshVar();
-        cb->emit(inbetweenadrrs + " = getelementptr (i32), i32* %local_vars, i32 " + std::to_string(offset));
+        cb->emit(inbetweenadrrs + " = getelementptr i32, i32* %local_vars, i32 " + std::to_string(offset));
 
     // Cast the pointer to the correct LLVM type: %cast = bitcast ...
     std::string cpointer = cb->freshVar();
@@ -631,7 +631,7 @@ auto len =(node.id->len);
  emitOobCheck(indexVar, len);
     int offset=node.id->offset;
 std::string getElement=cb->freshVar();
-    cb->emit(getElement + " = getelementptr (i32), i32* %local_vars, i32 " +
+    cb->emit(getElement + " = getelementptr i32, i32* %local_vars, i32 " +
              std::to_string(offset));
 
  /* ---------- 3.  Bit-cast slot pointer to the real element type ---------- */
