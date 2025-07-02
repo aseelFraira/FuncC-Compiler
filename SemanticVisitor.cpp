@@ -401,7 +401,6 @@ void SemanticVisitor::visit(ast::ArrayAssign& node) { // should allow normal ass
     {
         output::errorMismatch(node.line);
     }
-    std::cerr << "[DEBUG - SV - Arrayassign]The len of array is " << node.id->len << std::endl;
 
 }
 

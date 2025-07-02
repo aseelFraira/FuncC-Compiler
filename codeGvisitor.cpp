@@ -440,6 +440,7 @@ void codeGvisitor::visit(ast::ArrayAssign &node) {
     node.index->accept(*this);
     node.exp->accept(*this);
 
+    std::cerr << "[DEBUG] the index var is " << node.index->newVar <<std::endl;
     std::string indexVar = node.index->newVar;
 
     // Widen index if it's a BYTE (needed for GEP and OOB check)
