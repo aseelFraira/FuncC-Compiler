@@ -165,6 +165,7 @@ void codeGvisitor::visit(VarDecl& node) {
                     "store " + llvmType + " " + initValueVar + ", " + llvmType +
                     "* " + finalPtr);
 
+            printWithStars({initValueVar});
 
         } else {
             std::string defaultValue = (node.id->type == BuiltInType::BOOL)
@@ -341,7 +342,6 @@ void codeGvisitor::visit(BinOp& node) {
     // Determine operation type (i32 if either operand is INT or if result is INT)
     bool needsWidening = resultType == BuiltInType::INT;
     std::string opType = needsWidening ? "i32" : "i8";
-    printWithStars({lhs,rhs});
 
 
     // Widen operands to i32 only if needed
