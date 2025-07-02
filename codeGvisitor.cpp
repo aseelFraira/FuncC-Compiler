@@ -338,6 +338,8 @@ void codeGvisitor::visit(If& node) {
 /*LLVM syntax: %res = add i32 %a, %b <-> a+b*/
 void codeGvisitor::visit(BinOp& node) {
     // Visit both operands first
+    printWithStars({node.left->newVar});
+
     node.left->accept(*this);
     node.right->accept(*this);
 
@@ -470,7 +472,6 @@ void codeGvisitor::visit(ast::ArrayAssign &node) {
     node.id->accept(*this);
     node.index->accept(*this);
     node.exp->accept(*this);
-    printWithStars({node.exp->newVar});
 
 
 
