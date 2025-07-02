@@ -370,6 +370,7 @@ void SemanticVisitor::visit(ast::ArrayAssign& node) { // should allow normal ass
     node.id->accept(*this);
     node.index->accept(*this);
     node.exp->accept(*this);
+
     auto iType = node.index->type;
 
     if (iType != ast::INT && iType!= ast::BYTE)

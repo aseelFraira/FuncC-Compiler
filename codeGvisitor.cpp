@@ -440,7 +440,18 @@ void codeGvisitor::visit(ast::ArrayAssign &node) {
     node.index->accept(*this);
     node.exp->accept(*this);
 
-    std::cerr << "[DEBUG] the index var is " << node.index->newVar <<std::endl;
+    std::string reg = cb->freshVar();
+    if (auto isNum = std::dynamic_pointer_cast<Num>(node.index)) {
+        if (isNum->type == ast::BuiltInType::INT) {
+            cb->emit(reg + " = add i32 0, " + std::to_string(isNum->value));
+            node.index->newVar = reg;
+        }
+    }else if (auto isByte = std::dynamic_pointer_cast<NumB>(node.index)) {
+            cb->emit(reg + " = add i8 0, " + std::to_string(isNum->value));
+            node.index->newVar = reg;
+    }
+
+
     std::string indexVar = node.index->newVar;
 
     // Widen index if it's a BYTE (needed for GEP and OOB check)
@@ -494,9 +505,9 @@ void codeGvisitor::visit(ast::Funcs& node){
     }
 }
 ////////////////////////////////////////////////////////////////////////////////
-void codeGvisitor::visit(ast::PrimitiveType &node){}//done
+void codeGvisitor::visit(ast::PrimitiveType &node){}
 ////////////////////////////////////////////////////////////////////////////////
-void codeGvisitor::visit(ast::Formal &node){}//today
+void codeGvisitor::visit(ast::Formal &node){}
 ////////////////////////////////////////////////////////////////////////////////
 void codeGvisitor::visit(ast::Formals &node) {
     std::string argsLine;
