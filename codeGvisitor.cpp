@@ -746,7 +746,6 @@ void codeGvisitor::visit(ArrayDereference& node) {
     auto len = node.id->len;
     std::string okLabel = emitOobCheck(indexVar, len);  // Already emits okLabel at end
 
-    printWithStars({indexVar});
 
     int offset = node.id->offset;
     std::string basePtrRaw = cb->freshVar();
@@ -763,6 +762,8 @@ void codeGvisitor::visit(ArrayDereference& node) {
 
     std::string loaded = cb->freshVar();
     cb->emit(loaded + " = load " + llvmElemType + ", " + llvmElemType + "* " + elemPtr + ", align 4");
+
+    printWithStars({loaded});
 
     node.newVar = loaded;
 }
