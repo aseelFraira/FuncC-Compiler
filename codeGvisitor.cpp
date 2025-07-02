@@ -160,6 +160,8 @@ void codeGvisitor::visit(VarDecl& node) {
             std::cerr<<"[DEBUG] - Before visit" << std::endl;
             node.init_exp->accept(*this);
             std::string initValueVar = node.init_exp->newVar;
+            printWithStars({initValueVar});
+
             cb->emit(
                     "store " + llvmType + " " + initValueVar + ", " + llvmType +
                     "* " + finalPtr);
