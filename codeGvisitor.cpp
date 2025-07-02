@@ -176,10 +176,11 @@ void codeGvisitor::visit(VarDecl& node) {
     }
     std::string debug = cb->freshVar();
     cb->emit(debug + " = load " + llvmType + ", " + llvmType + "* " + finalPtr);
-    printWithStars({debug});
 
 // Optionally set newVar so other code can refer to it
     node.id->newVar = debug;
+    printWithStars({node.id->newVar});
+
 
 
 
