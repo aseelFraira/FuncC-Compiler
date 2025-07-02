@@ -123,6 +123,11 @@ void codeGvisitor::visit(VarDecl& node) {
     std::string llvmType = output::changeType(node.id->type);
     std::string ptrVar = cb->freshVar();
 
+    std::string arrayOffReg = cb->freshVar();
+    cb->emit(arrayOffReg + " = add i32 0, 0");
+
+
+
     // Always compute GEP from %local_vars, which is i32*
     cb->emit(ptrVar + " = getelementptr i32, i32* %local_vars, i32 " +
              std::to_string(node.id->offset));
@@ -152,11 +157,20 @@ void codeGvisitor::visit(VarDecl& node) {
     }else {
         if (node.init_exp) {
             node.init_exp->accept(*this);
-            std::string initValueVar = node.init_exp->newVar;
-            cb->emit(
-                    "store " + llvmType + " " + initValueVar + ", " + llvmType +
-                    "* " + finalPtr);
-        } else {
+            std::string initValueVar;
+
+            // Check if it's an ArrayDereference
+            if (std::dynamic_pointer_cast<ast::ArrayDereference>(node.init_exp)) {
+                std::string loaded = cb->freshVar();
+                std::string elemType = output::changeType(node.init_exp->type);
+                cb->emit(loaded + " = load " + elemType + ", " + elemType + "* " + node.init_exp->newVar);
+                initValueVar = loaded;
+            } else {
+                initValueVar = node.init_exp->newVar;
+            }
+            cb->emit("store " + llvmType + " " + initValueVar + ", " + llvmType + "* " + finalPtr);
+        }
+else {
             std::string defaultValue = (node.id->type == BuiltInType::BOOL)
                                        ? "false" : "0";
             cb->emit(
