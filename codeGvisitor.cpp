@@ -160,12 +160,11 @@ void codeGvisitor::visit(VarDecl& node) {
             std::cerr<<"[DEBUG] - Before visit" << std::endl;
             node.init_exp->accept(*this);
             std::string initValueVar = node.init_exp->newVar;
-            printWithStars({initValueVar});
 
             cb->emit(
                     "store " + llvmType + " " + initValueVar + ", " + llvmType +
                     "* " + finalPtr);
-            printWithStars({initValueVar});
+
 
         } else {
             std::string defaultValue = (node.id->type == BuiltInType::BOOL)
@@ -505,6 +504,7 @@ void codeGvisitor::visit(ast::ArrayAssign &node) {
     std::string baseTypedPtr = cb->freshVar();
     cb->emit(baseTypedPtr + " = bitcast i32* " + basePtrI32 + " to " + llvmElemType + "*");
 
+    printWithStars({indexVar});
     std::string elemPtr = cb->freshVar();
     cb->emit(elemPtr + " = getelementptr " + llvmElemType + ", " + llvmElemType + "* " + baseTypedPtr + ", i32 " + indexVar);
 
@@ -766,7 +766,6 @@ void codeGvisitor::visit(ArrayDereference& node) {
     std::string loaded = cb->freshVar();
     cb->emit(loaded + " = load " + llvmElemType + ", " + llvmElemType + "* " + elemPtr + ", align 4");
 
-    printWithStars({indexVar,loaded});
 
     node.newVar = loaded;
 }
