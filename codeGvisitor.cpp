@@ -158,10 +158,6 @@ void codeGvisitor::visit(VarDecl& node) {
         if (node.init_exp) {
             node.init_exp->accept(*this);
             std::string initValueVar = node.init_exp->newVar;
-            cb->emit("call void @printi(i32 " + initValueVar + ")");
-
-            std::cerr <<"The index is " << initValueVar << std::endl;
-
             cb->emit(
                     "store " + llvmType + " " + initValueVar + ", " + llvmType +
                     "* " + finalPtr);
@@ -743,6 +739,9 @@ void codeGvisitor::visit(ArrayDereference& node) {
 
     std::string indexVar = node.index->newVar;
     codeGvisitor::widenByte(indexVar, node.index->type);
+
+    cb->emit("call void @printi(i32 " + indexVar + ")");
+
 
     auto len = node.id->len;
     std::string okLabel = emitOobCheck(indexVar, len);  // Already emits okLabel at end
