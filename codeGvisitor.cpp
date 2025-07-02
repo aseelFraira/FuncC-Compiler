@@ -742,7 +742,7 @@ void codeGvisitor::visit(ArrayDereference& node) {
 
     auto len = node.id->len;
     std::string okLabel = emitOobCheck(indexVar, len);  // Already emits okLabel at end
-    printRegister("{index is }" , {indexVar});
+    printWithStars({indexVar});
     int offset = node.id->offset;
     std::string basePtrRaw = cb->freshVar();
     cb->emit(basePtrRaw + " = getelementptr i32, i32* %local_vars, i32 " + std::to_string(offset));
@@ -859,13 +859,28 @@ std::string codeGvisitor::emitOobCheck(const std::string& idxVar,
     return okLabel;
 }
 
-std::string codeGvisitor::printRegister(std::string msg, std::vector<std::string> regs) {
-    std::string tmp = cb->freshVar();
-    cb->emit(tmp + " = getelementptr [" + std::to_string(msg.size()) + " x i8], [" + std::to_string(msg.size()) + " x i8]* @" + msg + ", i32 0, i32 0");
-    cb->emit("call void @print(i8* " + tmp + ")");
+void codeGvisitor::printWithStars(const std::vector<std::string> &regs) {
+    // Pre-declared global strings (you should declare them in your LLVM IR output once)
+    // @.stars = private unnamed_addr constant [19 x i8] c"*****************\0A\00"
 
+    const std::string starLineName = ".stars";
+    const int starLineLen = 18 + 1;  // 18 stars + \n + \0
+
+    // Print before
+    std::string tmpBefore = cb->freshVar();
+    cb->emit(tmpBefore + " = getelementptr [" + std::to_string(starLineLen) + " x i8], [" +
+             std::to_string(starLineLen) + " x i8]* @" + starLineName + ", i32 0, i32 0");
+    cb->emit("call void @print(i8* " + tmpBefore + ")");
+
+    // Print each register
     for (const auto& reg : regs) {
         cb->emit("call void @printi(i32 " + reg + ")");
     }
+
+    // Print after
+    std::string tmpAfter = cb->freshVar();
+    cb->emit(tmpAfter + " = getelementptr [" + std::to_string(starLineLen) + " x i8], [" +
+             std::to_string(starLineLen) + " x i8]* @" + starLineName + ", i32 0, i32 0");
+    cb->emit("call void @print(i8* " + tmpAfter + ")");
 }
 
