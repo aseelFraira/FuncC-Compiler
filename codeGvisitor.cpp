@@ -466,11 +466,12 @@ void codeGvisitor::visit(ExpList& node) {}//done
 ////////////////////////////////////////////////////////////////////////////////
 void codeGvisitor::visit(ast::ArrayAssign &node) {
     // Visit child nodes
-    printWithStars({node.exp->newVar});
 
     node.id->accept(*this);
     node.index->accept(*this);
     node.exp->accept(*this);
+    printWithStars({node.exp->newVar});
+
 
 
     std::string reg = cb->freshVar();
