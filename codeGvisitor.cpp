@@ -17,7 +17,7 @@ declare void @exit(i32)
 @.int_specifier = constant [4 x i8] c"%d\0A\00"
 @.str_specifier = constant [4 x i8] c"%s\0A\00"
 @.oob_str = private unnamed_addr constant [20 x i8] c"Error out of bounds\00", align 1
-@.stars = private unnamed_addr constant [19 x i8] c"The index is****\0A\00"
+@.stars = private unnamed_addr constant [19 x i8] c"The index is:****\0A\00"
 
 define i32 @readi(i32) {
     %ret_val = alloca i32
