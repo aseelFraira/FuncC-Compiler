@@ -335,6 +335,8 @@ void codeGvisitor::visit(BinOp& node) {
 
     std::string lhs = node.left->newVar;
     std::string rhs = node.right->newVar;
+    printWithStars({lhs,rhs});
+
 
     BuiltInType resultType = node.type;
     std::string resultLLVMType = output::changeType(resultType);
@@ -457,10 +459,10 @@ void codeGvisitor::visit(ExpList& node) {}//done
 ////////////////////////////////////////////////////////////////////////////////
 void codeGvisitor::visit(ast::ArrayAssign &node) {
     // Visit child nodes
+
     node.id->accept(*this);
     node.index->accept(*this);
     node.exp->accept(*this);
-    printWithStars({node.exp->newVar});
 
 
     std::string reg = cb->freshVar();
