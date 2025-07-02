@@ -159,6 +159,8 @@ void codeGvisitor::visit(VarDecl& node) {
         if (node.init_exp) {
             node.init_exp->accept(*this);
             std::string initValueVar = node.init_exp->newVar;
+            std::cerr<<"[DEBUG] - aint null" << std::endl;
+
             cb->emit(
                     "store " + llvmType + " " + initValueVar + ", " + llvmType +
                     "* " + finalPtr);
@@ -743,8 +745,6 @@ void codeGvisitor::visit(ArrayDereference& node) {
 
     auto len = node.id->len;
     std::string okLabel = emitOobCheck(indexVar, len);  // Already emits okLabel at end
-
-    std::cerr << "[DEBUG] - we made it here " << node.line << std::endl;
 
     printWithStars({indexVar});
     int offset = node.id->offset;
