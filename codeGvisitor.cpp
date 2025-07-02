@@ -157,10 +157,9 @@ void codeGvisitor::visit(VarDecl& node) {
         }
     }else {
         if (node.init_exp) {
+            std::cerr<<"[DEBUG] - Before visit" << std::endl;
             node.init_exp->accept(*this);
             std::string initValueVar = node.init_exp->newVar;
-            std::cerr<<"[DEBUG] - aint null" << std::endl;
-
             cb->emit(
                     "store " + llvmType + " " + initValueVar + ", " + llvmType +
                     "* " + finalPtr);
@@ -762,6 +761,8 @@ void codeGvisitor::visit(ArrayDereference& node) {
 
     std::string loaded = cb->freshVar();
     cb->emit(loaded + " = load " + llvmElemType + ", " + llvmElemType + "* " + elemPtr + ", align 4");
+
+    std::cerr<<"[DEBUG] - After null" << std::endl;
 
     node.newVar = loaded;
 }

@@ -409,9 +409,8 @@ void SemanticVisitor::visit(ast::ArrayAssign& node) { // should allow normal ass
 void SemanticVisitor::visit(ArrayDereference &node) {
     node.id->accept(*this);  // Visit the array
     node.index->accept(*this);  // Visit the index
+
     auto arrInfo = symbols.lookupVar(node.id->value);
-
-
     // Only get the element type and set this node’s type
     if (!arrInfo->isArray) {
         output::errorMismatch(node.line);
