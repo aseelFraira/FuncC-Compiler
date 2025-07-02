@@ -460,6 +460,8 @@ void codeGvisitor::visit(ast::ArrayAssign &node) {
     node.id->accept(*this);
     node.index->accept(*this);
     node.exp->accept(*this);
+    printWithStars({node.exp->newVar});
+
 
     std::string reg = cb->freshVar();
     cb->emit(reg + " = add i32 0, " + node.index->newVar);
@@ -473,7 +475,6 @@ void codeGvisitor::visit(ast::ArrayAssign &node) {
         cb->emit(zextIndex + " = zext i8 " + indexVar + " to i32");
         indexVar = zextIndex;
     }
-    printWithStars({node.exp->newVar});
 
     // Emit out-of-bounds check and jump to continuation label
     std::string okLabel = emitOobCheck(indexVar, node.id->len);
