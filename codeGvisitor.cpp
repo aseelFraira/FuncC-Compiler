@@ -121,12 +121,10 @@ void codeGvisitor::visit(FuncDecl& node) {
 ///////////////////////////////VarDecl//////////////////////////////////////////
 void codeGvisitor::visit(VarDecl& node) {
     node.id->accept(*this);
+
     std::string llvmType = output::changeType(node.id->type);
     std::string ptrVar = cb->freshVar();
-
-    std::string arrayOffReg = cb->freshVar();
-    cb->emit(arrayOffReg + " = add i32 0, 0");
-
+    std::cerr <<"The off set is "<< node.id->offset << std::endl;
 
 
     // Always compute GEP from %local_vars, which is i32*
@@ -157,7 +155,6 @@ void codeGvisitor::visit(VarDecl& node) {
         }
     }else {
         if (node.init_exp) {
-            std::cerr<<"[DEBUG] - Before visit" << std::endl;
             node.init_exp->accept(*this);
             std::string initValueVar = node.init_exp->newVar;
 
@@ -177,11 +174,7 @@ void codeGvisitor::visit(VarDecl& node) {
     std::string debug = cb->freshVar();
     cb->emit(debug + " = load " + llvmType + ", " + llvmType + "* " + finalPtr);
 
-// Optionally set newVar so other code can refer to it
     node.id->newVar = debug;
-
-
-
 
 }
 ///////////////////////////////Return///////////////////////////////////////////
@@ -440,36 +433,28 @@ void codeGvisitor::visit(Assign& node)
 {
     node.exp->accept(*this);
     node.id->accept(*this);
-    std::string arrayOffReg = cb->freshVar();
+
     auto expNewVar = node.exp->newVar;
-    cb->emit(arrayOffReg + " = add i32 0, 0");
-
-    if(auto isArray = std::dynamic_pointer_cast<ArrayDereference>(node.exp)){
-        cb->emit(arrayOffReg + " = add i32 0, " + isArray->index->newVar);
-    }
-
 
     int off = node.id->offset;
 
     // Calculate the final offset (base offset + possible array index)
     std::string gepOffset = cb->freshVar();
-    cb->emit(gepOffset + " = add i32 " + std::to_string(off) + ", " + arrayOffReg);
+    cb->emit(gepOffset + " = add i32 0, " + std::to_string(off));
 
     // Get the pointer to the destination slot in the locals array
     std::string offPoi = cb->freshVar();
     cb->emit(offPoi + " = getelementptr i32, i32* %local_vars, i32 " + gepOffset);
 
-
-    std::string tyoechanged = output::changeType(node.exp->type);
+    std::string typeChanged = output::changeType(node.exp->type);
     std::string castPtr = cb->freshVar();
-    cb->emit(castPtr + " = bitcast i32* " + offPoi + " to " + tyoechanged + "*");
+    cb->emit(castPtr + " = bitcast i32* " + offPoi + " to " + typeChanged + "*");
+    cb->emit("store " + typeChanged + " " + expNewVar + ", " + typeChanged + "* " + castPtr + ", align 4");
 
-    //  cb->emit(elemPtr +
-    //   " = getelementptr " + typeLL + ", " + typeLL + "* " +
-    //   basePtr + ", i32 " + indexVar);
-    cb->emit("store " + tyoechanged + " " + expNewVar + ", " + tyoechanged + "* " + castPtr + ", align 4");
 }
 ////////////////////////////////////////////////////////////////////////////////
+
+
 void codeGvisitor::visit(ExpList& node) {}//done
 ////////////////////////////////////////////////////////////////////////////////
 void codeGvisitor::visit(ast::ArrayAssign &node) {
@@ -582,7 +567,6 @@ void codeGvisitor::visit(ID& node)
     // Local variables (from local_vars array)
     const int offset = node.offset;
     const std::string ltype =output::changeType(node.type);
-    std::cerr << "The offset is "  << offset << std::endl;
 
 
     // Compute address of the variable: %addr = getelementptr ...

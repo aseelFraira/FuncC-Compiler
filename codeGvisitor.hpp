@@ -56,6 +56,8 @@ private:
         BuiltInType currentReturnTypeFunc;
 
     void printWithStars(const std::vector<std::string> &regs);
+
+    void visit(Exp &node);
 };
 
 
