@@ -605,6 +605,7 @@ void SemanticVisitor::visit(ID& node) {
     } else {
         node.type = t->type;
         node.len = t->length;
+        node.offset = t->offset;
     }
 }
 

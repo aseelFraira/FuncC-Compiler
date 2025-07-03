@@ -124,7 +124,6 @@ void codeGvisitor::visit(VarDecl& node) {
 
     std::string llvmType = output::changeType(node.id->type);
     std::string ptrVar = cb->freshVar();
-    std::cerr <<"The off set is "<< node.id->offset << std::endl;
 
 
     // Always compute GEP from %local_vars, which is i32*
