@@ -437,7 +437,7 @@ void codeGvisitor::visit(Statements& node){
 }
 ////////////////////////////////////////////////////////////////////////////////
 void codeGvisitor::visit(Assign& node)
-     {
+{
     node.exp->accept(*this);
     node.id->accept(*this);
     std::string arrayOffReg = cb->freshVar();
@@ -449,24 +449,26 @@ void codeGvisitor::visit(Assign& node)
     }
 
 
-
     int off = node.id->offset;
-    std::string gepIndex = cb->freshVar();
-    cb->emit(gepIndex + " = add i32 " + std::to_string(off) + ", " + arrayOffReg);
 
+    // Calculate the final offset (base offset + possible array index)
+    std::string gepOffset = cb->freshVar();
+    cb->emit(gepOffset + " = add i32 " + std::to_string(off) + ", " + arrayOffReg);
+
+    // Get the pointer to the destination slot in the locals array
     std::string offPoi = cb->freshVar();
-    cb->emit(offPoi + " = getelementptr i32, i32* %local_vars, i32 " + gepIndex);
+    cb->emit(offPoi + " = getelementptr i32, i32* %local_vars, i32 " + gepOffset);
 
-  
-    std::string tyoechanged = output::changeType(node.exp->type); 
+
+    std::string tyoechanged = output::changeType(node.exp->type);
     std::string castPtr = cb->freshVar();
     cb->emit(castPtr + " = bitcast i32* " + offPoi + " to " + tyoechanged + "*");
 
-   //  cb->emit(elemPtr +
-     //   " = getelementptr " + typeLL + ", " + typeLL + "* " +
-     //   basePtr + ", i32 " + indexVar);
+    //  cb->emit(elemPtr +
+    //   " = getelementptr " + typeLL + ", " + typeLL + "* " +
+    //   basePtr + ", i32 " + indexVar);
     cb->emit("store " + tyoechanged + " " + expNewVar + ", " + tyoechanged + "* " + castPtr + ", align 4");
-     }
+}
 ////////////////////////////////////////////////////////////////////////////////
 void codeGvisitor::visit(ExpList& node) {}//done
 ////////////////////////////////////////////////////////////////////////////////
