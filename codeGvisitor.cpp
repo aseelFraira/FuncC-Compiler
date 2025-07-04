@@ -210,7 +210,8 @@ void codeGvisitor::visit(While& node) {
     // Generate code for the loop condition
     node.condition->accept(*this);
     std::string condVar = node.condition->newVar;
-
+   auto deb =std::dynamic_pointer_cast<Num>(node.condition);
+std::cerr<<"debug : "<<deb<<std::endl;
     // br i1 %cond, label %body_label, label %end_label
     cb->emit("br i1 " + condVar + ", label " + bodyLabel + ", label " + endLabel);
     //cb->emit("");
