@@ -8,7 +8,7 @@ using namespace std;
 using namespace ast;
 
 codeGvisitor::codeGvisitor(output::CodeBuffer* cb): cb(cb)
-{ //  //
+{
  cb->emit(R"(
 declare i32 @scanf(i8*, ...)
 declare i32 @printf(i8*, ...)
@@ -194,12 +194,11 @@ void codeGvisitor::visit(Return& node) {
 /*Here or any nested loops/blocks we need to save the Begin and Endl label so
  * we don't lose them that's why i added stacks*/
 void codeGvisitor::visit(While& node) {
-  // Create labels for control flow
-    std::string condLabel = cb->freshLabel();     // start of condition check
+  std::string condLabel = cb->freshLabel();     // start of condition check
     std::string bodyLabel = cb->freshLabel();     // loop body
     std::string endLabel = cb->freshLabel();      // after the loop
 
-    beginLabels.push(condLabel);
+    beginLabels.push(bodyLabel);
     endLabels.push(endLabel);
 
     // Unconditional branch to condition check
@@ -210,7 +209,7 @@ void codeGvisitor::visit(While& node) {
     // Generate code for the loop condition
     node.condition->accept(*this);
     std::string condVar = node.condition->newVar;
-
+  
     // br i1 %cond, label %body_label, label %end_label
     cb->emit("br i1 " + condVar + ", label " + bodyLabel + ", label " + endLabel);
     cb->emit("");
@@ -439,7 +438,7 @@ void codeGvisitor::visit(Assign& node)
     auto expNewVar = node.exp->newVar;
 
     int off = node.id->offset;
-
+   // std::cerr<<"offset : "<<off<<"std esxp : "<<expNewVar<<std::endl;
     // Calculate the final offset (base offset + possible array index)
     std::string gepOffset = cb->freshVar();
     cb->emit(gepOffset + " = add i32 0, " + std::to_string(off));
@@ -893,5 +892,7 @@ void codeGvisitor::printWithStars(const std::vector<std::string> &regs) {
     for (const auto& reg : regs) {
         cb->emit("call void @printi(i32 " + reg + ")");
     }
+
+
 }
 

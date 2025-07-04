@@ -400,7 +400,7 @@ std::string beginL;
     class While : public Statement {
     public:
         // Condition expression
-        std::shared_ptr<Exp> condition;//only type
+        std::shared_ptr<Exp> condition;
         // Statement to be executed while the condition is true
         std::shared_ptr<Statement> body;
 
