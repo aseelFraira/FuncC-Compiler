@@ -210,19 +210,30 @@ void codeGvisitor::visit(While& node) {
     // Generate code for the loop condition
     node.condition->accept(*this);
     std::string condVar = node.condition->newVar;
-   auto deb =std::dynamic_pointer_cast<Num>(node.condition);
-cb->emit("debug : "  +deb->newVar);
+  // auto deb =std::dynamic_pointer_cast<RelOp>(node.condition);
+   //auto
+//std::cerr<<"debug : "  <<deb->newVar<<std::endl;
     // br i1 %cond, label %body_label, label %end_label
     cb->emit("br i1 " + condVar + ", label " + bodyLabel + ", label " + endLabel);
     //cb->emit("");
 
     // Emit body block
-    cb->emitLabel(bodyLabel);
-    node.body->accept(*this); // emit body code
+   // cb->emitLabel(bodyLabel);
+  //  node.body->accept(*this); // emit body code
+
+
+cb->emitLabel(bodyLabel);
+    node.body->accept(*this);
+
+    // 4) after the body, *then* jump back to the test
+   // cb->emit("br label " + condLabel);
+
+
+
 
     // After body, jump back to condition check
     cb->emit("br label " + condLabel);
-    cb->emit("");
+    //cb->emit("");
 
     // Emit loop exit label
     cb->emitLabel(endLabel);
