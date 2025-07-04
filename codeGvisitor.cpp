@@ -199,7 +199,7 @@ void codeGvisitor::visit(While& node) {
     std::string bodyLabel = cb->freshLabel();     // loop body
     std::string endLabel = cb->freshLabel();      // after the loop
 
-    beginLabels.push(bodyLabel);
+    beginLabels.push(condLabel);
     endLabels.push(endLabel);
 
     // Unconditional branch to condition check
