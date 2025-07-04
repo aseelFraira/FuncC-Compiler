@@ -194,7 +194,7 @@ void codeGvisitor::visit(Return& node) {
 /*Here or any nested loops/blocks we need to save the Begin and Endl label so
  * we don't lose them that's why i added stacks*/
 void codeGvisitor::visit(While& node) {
-    // Create labels for control flow
+  // Create labels for control flow
     std::string condLabel = cb->freshLabel();     // start of condition check
     std::string bodyLabel = cb->freshLabel();     // loop body
     std::string endLabel = cb->freshLabel();      // after the loop
@@ -204,17 +204,16 @@ void codeGvisitor::visit(While& node) {
 
     // Unconditional branch to condition check
     cb->emit("br label " + condLabel);
-   // cb->emit("");
+    cb->emit("");
     cb->emitLabel(condLabel);
 
     // Generate code for the loop condition
     node.condition->accept(*this);
     std::string condVar = node.condition->newVar;
-   //auto deb std::dynamic_pointer_cast<exp>(node.body->statements.back()
-//std::cerr<
+
     // br i1 %cond, label %body_label, label %end_label
     cb->emit("br i1 " + condVar + ", label " + bodyLabel + ", label " + endLabel);
-    //cb->emit("");
+    cb->emit("");
 
     // Emit body block
     cb->emitLabel(bodyLabel);
