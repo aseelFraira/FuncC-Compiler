@@ -84,7 +84,7 @@ for DIR in "${TEST_DIRS[@]}"; do
         lli "$LL_FILE" > "$RES_FILE" 2> /dev/null
 
         # Compare result
-        if diff -q "$RES_FILE" "$OUT_FILE" > /dev/null 2>&1; then
+        if diff --strip-trailing-cr -q "$RES_FILE" "$OUT_FILE" > /dev/null 2>&1; then
             echo "│  ✅ $BASENAME"
             rm -f "$RES_FILE" "$LL_FILE"
             ((PASS++))
